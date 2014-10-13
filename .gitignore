@@ -26,3 +26,14 @@ node_modules
 
 # Users Environment Variables
 .lock-wscript
+
+# GULP
+gulpfile.js
+
+# JS IN COFFEE SOURCE
+src/coffee/*.js
+src/coffee/**/*.js
+
+# TEMPORARY / VOLATILE FOLDERS
+build
+
