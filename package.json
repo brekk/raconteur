@@ -29,7 +29,8 @@
     "jade": "~1.7.0",
     "ampersand-model": "~4.0.2",
     "slug": "~0.8.0",
-    "coffee-script": "~1.8.0"
+    "coffee-script": "~1.8.0",
+    "marked": "^0.3.2"
   },
   "devDependencies": {
     "gulp-plumber": "^0.6.5",

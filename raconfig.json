@@ -1,0 +1,26 @@
+{
+    "project": "raconteur",
+    "author": {
+        "name": "brekk",
+        "fullname": "Brekk Bockrath"
+    },
+    "paths": {
+        "posts": "posts",
+        "assets": "assets",
+        "source": {
+            "coffee": [
+                "./src/coffee/*.coffee",
+                "./src/coffee/**/*.coffee",
+                "./src/coffee/**/**/*.coffee"
+            ],
+            "barecoffee": "./src/coffee/bare/*.coffee",
+            "stylus": "./src/stylus/*.styl",
+            "dust": "./src/templates/tpl-*.dust",
+            "powder": "./src/templates/tpl-*.powder"
+        },
+        "content": {
+            "markdown": "./content/*.md",
+            "assets": "./content/assets/*"
+        }
+    }
+}

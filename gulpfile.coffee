@@ -48,16 +48,19 @@ process.on 'uncaughtException', (finalError)->
     if finalError?
         console.log "Error during gulping:", finalError
 
-structure = require './structure/pattern.json'
-config = require './config/default.json'
+structure = require './raconfig.json'
+
+config = {}
+if fs.existsSync './config/default.json'
+    config = require './config/default.json'
 
 
 # Simple move tasks
 
 gulp.task 'move', [
-    'move:markdown'
+    # 'move:markdown'
     'move:assets'
-]
+] 
 
 # gulp.task 'move:markdown', ()->
 #     gulp.src structure.paths.content.markdown
@@ -236,7 +239,7 @@ if config?.sync?.hosts?
     addSyncTask = (hostdata, hostname, x, asSingleFile=false)->
         {path, username} = hostdata
         unless path?
-            path = '~/Server/brekk.is'
+            path = '~/Server/raconteur'
         unless tasks?.sync?
             tasks.sync = {
                 description: "Sync data to a remote host using rsync."

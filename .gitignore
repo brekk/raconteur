@@ -37,3 +37,5 @@ src/coffee/**/*.js
 # TEMPORARY / VOLATILE FOLDERS
 build
 
+# POSTS
+posts
