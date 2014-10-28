@@ -216,7 +216,7 @@ if templates.has 'post'
 
 
 
-        frontmatter.parseFile "#{cd}/content/" + path + '.md', (err, frontdata)->
+        frontmatter.parseFile "#{cd}/posts/" + path + '.md', (err, frontdata)->
             if err
                 console.log "Error reading file:", err
                 throw err
