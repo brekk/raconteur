@@ -12,7 +12,6 @@ plumber = require 'gulp-plumber'
 
 coffee = require 'gulp-coffee'
 
-clean = require 'gulp-clean'
 uglify = require 'gulp-uglify'
 
 concat = require 'gulp-concat'
@@ -82,6 +81,13 @@ gulp.task 'convert:coffee', [
     'convert:coffee:bare'
 ]
 
+pipeNotification = (stream, settings)->
+    # we could check against other stuff later
+    invalidSystem = (os.arch() is 'arm')
+    unless invalidSystem
+        stream.pipe notify settings
+    return stream
+
 # most coffee files should be wrapped for safety
 gulp.task 'convert:coffee:wrapped', ()->
     files = []
@@ -102,10 +108,7 @@ gulp.task 'convert:coffee:wrapped', ()->
     stream = gulp.src source
                  .pipe coffee()
                  .pipe flatten()
-    # we could check against other stuff later
-    invalidSystem = (os.arch() is 'arm')
-    unless invalidSystem
-        stream.pipe notify notification
+    pipeNotification stream, notification
     stream.pipe gulp.dest destination
 
 # but some other coffee files shouldn't be wrapped, for extra magic
@@ -131,10 +134,7 @@ gulp.task 'convert:coffee:bare', ()->
     stream = gulp.src source
                  .pipe coffee {bare: true}
                  # .pipe flatten()
-    # we could check against other stuff later
-    invalidSystem = (os.arch() is 'arm')
-    unless invalidSystem
-        stream.pipe notify notification
+    pipeNotification stream, notification
     stream.pipe gulp.dest destination
 
 # convert some stylus files
@@ -143,22 +143,20 @@ gulp.task 'convert:stylus', ()->
     files = []
     sayOnce = _.once ()->
         console.log '[ ' + files.join(', ') + ' ]'
-    gulp.src(structure.paths.source.stylus)
-        .on('error', utility.log)
-        .pipe(stylus({
-            compress: true
-            # use: nib()
-        }))
-        .pipe(prefix())
-        .pipe(notify({
-            message: (file)->
-                files.push file.relative
-                sayOnce()
-                return "Converted stylus file: <%= file.relative %>"
-            onLast: true
-        }))
-        .pipe gulp.dest destination
-    return
+    notification = {
+        message: (file)->
+            files.push file.relative
+            string = "Converted stylus file: <%= file.relative %> "
+            sayOnce()
+            return string
+        onLast: true
+    }
+    stream = gulp.src structure.paths.source.stylus
+                 .on 'error', utility.log
+                 .pipe stylus { compress: true }
+                 .pipe prefix()
+    pipeNotification stream, notification
+    stream.pipe gulp.dest destination
 
 # convert some dustjs files
 gulp.task 'convert:dust', ['move', 'convert:coffee:bare'], ()->
@@ -195,17 +193,22 @@ gulp.task 'convert:dust', ['move', 'convert:coffee:bare'], ()->
                      # .pipe notify notifications
                      .pipe dust()
 
-    dustPowder = streamqueue({objectMode: true},
+    dustPowder = streamqueue({
+            objectMode: true
+        },
         dustPipe,
         powderPipe
-    )
-    .pipe concat './bundled-templates.js'
-    .pipe gulp.dest destination
-    return
+    ).pipe concat './bundled-templates.js'
+     .pipe gulp.dest destination
 
 gulp.task 'build', [
     'build:templates'
 ]
+
+gulp.task 'clean', ()->
+    del [
+        'build'
+    ]
 
 gulp.task 'build:templates', ['convert:dust'], ()->
     destination = './build'
@@ -218,7 +221,6 @@ gulp.task 'build:templates', ['convert:dust'], ()->
         .pipe header "(function(){\n"
         .pipe footer "\n}).call(this);"
         .pipe gulp.dest destination
-    return
 
 
 gulp.task 'watch', [
