@@ -3,7 +3,7 @@ dust = require 'dustjs-linkedin'
 promise = require 'promised-io'
 Deferred = promise.Deferred
 
-Blacksmith = ()->
+Templateur = ()->
     self = @
     # add a named template
     self.add = (name, template)->
@@ -81,4 +81,4 @@ Blacksmith = ()->
 
     return self
 
-module.exports = Blacksmith
+module.exports = Templateur

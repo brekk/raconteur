@@ -139,7 +139,9 @@ renderer.heading = (text, level)->
         ).value()
     return ""
 
-module.exports = (body)->
+module.exports = (body, r)->
+    if r? and r instanceof marked.Renderer
+        renderer = r
     return marked body, {
         renderer: renderer
     }
