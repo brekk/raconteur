@@ -1,0 +1,8 @@
+{
+    "add": [
+        {
+            "name": "testemplate",
+            "template": "<div>{model.test}</div>"
+        }
+    ]
+}
