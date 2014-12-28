@@ -1,4 +1,6 @@
 _ = require 'lodash'
+promise = require 'promised-io/promise'
+Deferred = promised.Deferred
 marked = require './marked-renderer'
 frontmatter = require 'json-front-matter'
 
@@ -64,3 +66,12 @@ ___.open 'deliver', (file, renderer, cb)->
         if e.stack?
             console.log e.stack
         cb e
+
+___.open 'deliverAsPromise', (file, renderer)->
+    d = new Deferred()
+    @deliver file, renderer, (err, data)->
+        if err?
+            d.reject err
+            return
+        d.resolve data
+    return d

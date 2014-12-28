@@ -1,72 +1,88 @@
+###
+Revised version of the template generator:
+
+Should either use gulp as a subprocess or have a separate approach for generating content without gulp (which would probably make for a nice CLI utility).
+
+Check to see if a file exists
+if yes, load it
+if no, create it, then load it
+###
+
 _ = require 'lodash'
 dust = require 'dustjs-linkedin'
-promise = require 'promised-io'
+jade = require 'jade'
+promise = require 'promised-io/promise'
+pfs = require 'promised-io/fs'
+path = require 'path'
 Deferred = promise.Deferred
+postpone = ()->
+    d = new Deferred()
+    d.yay = _.once d.resolve
+    d.nay = _.once d.reject
+    return d
 
-Templateur = ()->
-    self = @
+
+Templateur = {
+    dust: ()->
+        return dust.apply dust, arguments
+    getSugarFiletype: ()->
+        unless @sugarFiletype?
+            @setSugarFiletype()
+        return @sugarFiletype
+    setSugarFiletype: ()->
+        @sugarFiletype = '.sugar'
     # add a named template
-    self.add = (name, template)->
-        if _.isString(name) and _.isString(template)
-            dust.loadSource dust.compile template, name
-            return true
-        return false
-
-    # force the name tpl-XXX.dust into XXX
-    unconvertName = (x)->
-        if x? and _.isString x
-            if x.indexOf('tpl-') is 0
-                x = x.substr(4)
-                if x.indexOf('.dust') isnt -1
-                    x = x.split('.')[0]
-        return x
-
-    # force the name to tpl-XXX.dust when given XXX
-    convertName = (x)->
-        if x? and _.isString x
-            if x.indexOf('tpl') is -1
-                x = 'tpl-' + x + '.dust'
-        return x
+    add: (name, template)->
+        d = postpone()
+        (->
+            if _.isString(name) and _.isString(template)
+                dust.loadSource dust.compile template, name
+                d.resolve true
+                return
+            d.reject false
+            return
+        )()
+        return d
 
     # check for the existence of a key in the cache
-    self.has = (x)->
+    has: (name)->
+        self = @
         dustKeys = _.keys(dust.cache)
-        if x
-            name = convertName x
+        if name
             return _.contains dustKeys, name
-        else
-            return _.map dustKeys, unconvertName
 
     # invoked with 3 arguments, will invoke callback with
     # rendered text or an error (#outcome)
     # invoked with 1 argument, will return a function which
     # expects a data model and a callback, which when invoked,
     # will return (#outcome)
-    self.create = (name, object, cb)->
-        unless name
+    create: (name, object, cb)->
+        self = @
+        unless name?
             return false
         returnAsFunction = false
         if arguments.length is 1
             returnAsFunction = true
-        name = convertName name
         unless self.has name
             return false
-        if returnAsFunction
+        unless returnAsFunction
+            if !cb? or !_.isFunction cb
+                throw new TypeError "Expected callback to be function."
+        else
+            # returnAsFunction
             return (data, callback)->
                 if !callback? or !_.isFunction callback
                     callback = ()->
                 results = dust.render name, data, callback
                 return results
-        if !cb? or !_.isFunction cb
-            throw new TypeError "Expected callback to be function."
         return dust.render name, object, cb
 
     # if given both a name and an object, returns a promise of the resolved render
     # if given only a name, will return a function which returns said promise
-    self.promise = (name, object)->
-        name = convertName name
+    createByPromise: (name, object)->
+        self = @
         render = (data)->
-            d = new Deferred()
+            d = postpone()
             dust.render name, data, (e, out)->
                 if e
                     d.reject e
@@ -74,11 +90,80 @@ Templateur = ()->
                 d.resolve out
                 return
             return d
-        if obj? and _.isObject object
-            return render()
+        if object? and _.isObject object
+            return render object
         else
             return render
 
-    return self
+    convertSugarToDust: (sugarContent, data, options)->
+        d = postpone()
+        self = @
+        reference = {
+            warning: false
+        }
+        unless data?
+            data = {}
+        unless options?
+            options = {}
+        # jade has no silent option, so this is a temporary hack
+        if console.warn?
+            reference.warning = console.warn
+            console.warn = (()->)
+        (->
+            output = jade.compile sugarContent, options
+            d.resolve output data
+            console.warn = reference.warning
+            delete reference.warning
+        )()
+        return d
+
+    loadFileByPromise: (fileToLoad, addAsTemplate=null, vivify=false)->
+        self = @
+        if _.isArray fileToLoad
+            return _(fileToLoad).map((item)->
+                unless item.file?
+                    return null
+                if item.name?
+                    if item.vivify?
+                        return self.loadFileByPromise item.file, item.name, item.vivify
+                    return self.loadFileByPromise item.file, item.name
+                return self.loadFileByPromise item.file
+            ).compact().value()
+
+        d = postpone()
+        fileReadOp = pfs.readFile fileToLoad, {
+            charset: 'utf8'
+        }
+        bad = (err)->
+            d.reject err
+        good = (input)->
+            output = input.toString()
+            if !output? or output.length is 0
+                d.reject new Error "File is empty."
+                return
+            if !addAsTemplate? or !_.isString addAsTemplate
+                d.resolve output
+                return
+            addNamedTemplate = (content)->
+                self.add(addAsTemplate, content).then ()->
+                    if vivify?
+                        if !_.isObject vivify
+                            d.resolve self.createByPromise(addAsTemplate)
+                            return
+                        else
+                            self.createByPromise(addAsTemplate, vivify).then (resolved)->
+                                d.resolve resolved
+                                return
+                            , bad
+                            return
+                    d.resolve content
+                    return
+                , bad
+            if self.getSugarFiletype() is path.extname fileToLoad
+                self.convertSugarToDust(output).then addNamedTemplate, bad
+            return
+        fileReadOp.then good, bad
+        return d
+}
 
 module.exports = Templateur

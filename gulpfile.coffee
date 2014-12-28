@@ -62,12 +62,12 @@ gulp.task 'move', [
 ] 
 
 # gulp.task 'move:markdown', ()->
-#     gulp.src structure.paths.content.markdown
+#     gulp.src structure.build.paths.content.markdown
 #         .pipe gulp.dest './build/posts'
 
     
 gulp.task 'move:assets', ()->
-    gulp.src structure.paths.content.assets
+    gulp.src structure.build.paths.content.assets
         .pipe gulp.dest './build/public/images'
 
 gulp.task 'convert', [
@@ -103,8 +103,8 @@ gulp.task 'convert:coffee:wrapped', ()->
         onLast: true
     }
     destination = './build'
-    source = structure.paths.source.coffee
-    source.push "!" + structure.paths.source.barecoffee
+    source = structure.build.paths.source.coffee
+    source.push "!" + structure.build.paths.source.barecoffee
     stream = gulp.src source
                  .pipe coffee()
                  .pipe flatten()
@@ -114,7 +114,7 @@ gulp.task 'convert:coffee:wrapped', ()->
 # but some other coffee files shouldn't be wrapped, for extra magic
 ###
 Currently this list includes:
-*  Blacksmith (armorer)
+*  Templateur (armorer)
 ###
 gulp.task 'convert:coffee:bare', ()->
     files = []
@@ -130,7 +130,7 @@ gulp.task 'convert:coffee:bare', ()->
         onLast: true
     }
     destination = './build'
-    source = structure.paths.source.barecoffee
+    source = structure.build.paths.source.barecoffee
     stream = gulp.src source
                  .pipe coffee {bare: true}
                  # .pipe flatten()
@@ -151,7 +151,7 @@ gulp.task 'convert:stylus', ()->
             return string
         onLast: true
     }
-    stream = gulp.src structure.paths.source.stylus
+    stream = gulp.src structure.build.paths.source.stylus
                  .on 'error', utility.log
                  .pipe stylus { compress: true }
                  .pipe prefix()
@@ -162,7 +162,7 @@ gulp.task 'convert:stylus', ()->
 gulp.task 'convert:dust', ['move', 'convert:coffee:bare'], ()->
     destination = './build'
 
-    dustPipe = gulp.src structure.paths.source.dust
+    dustPipe = gulp.src structure.build.paths.source.dust
                    .pipe dust()
 
     asJade = (path)->
@@ -186,7 +186,7 @@ gulp.task 'convert:dust', ['move', 'convert:coffee:bare'], ()->
         onLast: true
     }
 
-    powderPipe = gulp.src structure.paths.source.powder
+    powderPipe = gulp.src structure.build.paths.source.powder
                      .pipe rename asJade
                      .pipe jade()
                      .pipe rename asDust
@@ -228,7 +228,7 @@ gulp.task 'watch', [
 ]
 
 gulp.task 'watch:stylus', ()->
-    gulp.watch structure.paths.source.stylus, ['convert:stylus']
+    gulp.watch structure.build.paths.source.stylus, ['convert:stylus']
 
 tasks = {}
 
