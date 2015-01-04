@@ -49,7 +49,7 @@ rantify = (model)->
                 callback test
         beforeEach reset
         afterEach reset
-        describe 'Templateur', ()->
+        describe 'Templateur (a dust + jade converter)', ()->
             describe '.getSugarFiletype', ()->
                 it 'should be .sugar by default', ()->
                     $.getSugarFiletype().should.equal '.sugar'

@@ -17,7 +17,9 @@
                 "barecoffee": "./src/coffee/bare/*.coffee",
                 "stylus": "./src/stylus/*.styl",
                 "dust": "./src/templates/tpl-*.dust",
-                "powder": "./src/templates/tpl-*.powder"
+                "powder": "./src/templates/tpl-*.powder",
+                "tests": "./src/coffee/test/*.coffee",
+                "fixtures": "src/coffee/test/fixtures"
             },
             "content": {
                 "markdown": "./content/*.md",

@@ -10,6 +10,10 @@ utility = require 'gulp-util'
 watch = require 'gulp-watch'
 plumber = require 'gulp-plumber'
 
+cpr = require 'cp-r'
+mkdirp = require 'mkdirp'
+del = require 'del'
+
 coffee = require 'gulp-coffee'
 
 uglify = require 'gulp-uglify'
@@ -40,6 +44,8 @@ notify = require 'gulp-notify'
 
 fs = require 'fs'
 os = require 'os'
+
+path = require 'path'
 
 # listen for exceptions
 
@@ -110,6 +116,22 @@ gulp.task 'convert:coffee:wrapped', ()->
                  .pipe flatten()
     pipeNotification stream, notification
     stream.pipe gulp.dest destination
+
+gulp.task 'copy:test:fixtures', (done)->
+    source = structure.build.paths.source.fixtures
+    dest = process.cwd() + '/test/fixtures'
+    finish = _.once done
+    cpr(source, dest).read finish
+    return
+
+gulp.task 'convert:coffee:tests', [
+    'copy:test:fixtures'
+],()->
+    destination = './test'
+    source = structure.build.paths.source.tests
+    gulp.src source
+        .pipe coffee()
+        .pipe gulp.dest destination
 
 # but some other coffee files shouldn't be wrapped, for extra magic
 ###
@@ -204,6 +226,15 @@ gulp.task 'convert:dust', ['move', 'convert:coffee:bare'], ()->
 gulp.task 'build', [
     'build:templates'
 ]
+
+gulp.task 'test', [
+    'copy:test:fixtures'
+    'convert:coffee:tests'
+], ()->
+    destination = './test'
+    gulp.src './test/*.js'
+        .pipe mocha { reporter: 'spec', colors: true }
+        .pipe gulp.dest destination
 
 gulp.task 'clean', ()->
     del [

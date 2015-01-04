@@ -42,6 +42,6 @@ posts
 content
 
 # Tests
-test
+/test
 !src/coffee/test/*.coffee
 !src/coffee/test/fixtures/*.json

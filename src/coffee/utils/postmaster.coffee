@@ -1,75 +1,90 @@
 _ = require 'lodash'
 promise = require 'promised-io/promise'
-Deferred = promised.Deferred
-marked = require './marked-renderer'
+Deferred = promise.Deferred
+marked = require './renderer'
 frontmatter = require 'json-front-matter'
 
-module.exports = Postman = {}
+module.exports = Storytelleur = {}
 
-___ = require('parkplace').scope Postman
+___ = require('parkplace').scope Storytelleur
 
-___.secret 'path', ''
+___.writable 'path', ''
 
-___.secret 'renderer', false
-
-___.open 'address', (path)->
+___.open 'setPath', (path)->
     if _.isString path
         @path = path
     return @
 
-___.open 'box', (renderer)->
-    if _.isFunction renderer
-        @renderer = renderer 
-    return @
-
-___.open 'deliver', (file, renderer, cb)->
+___.guarded 'handleFrontMatter', (frontdata, cb)->
     try
-        if @path isnt ''
-            file = @path + path
-        if @renderer? and _.isFunction(@renderer) and _.size(arguments) is 2
-            cb = renderer
-            renderer = @renderer
-        unless _.isFunction renderer
-            if @renderer? and _.isFunction @renderer
-                renderer = @renderer
-        unless _.isFunction renderer
-            throw new TypeError "Expected a renderer function to be given."
-        unless _.isFunction cb
-            throw new TypeError "Expected a callback function to be given."
+        unless frontdata?
+            throw new Error "Expected data from FrontMatter. Have you added {{{metadata}}} to your post?"
+        {body, attributes} = frontdata
+        output = marked body
+        callbackable = cb? and _.isFunction cb
+        if output?
+            post = {
+                attributes: attributes
+                content: output
+                # raw: body
+            }
+            if callbackable
+                cb null, post
+                return
+        else if callbackable
+            cb new Error "Improper markdown conversion."
+    catch e
+        console.log "Error during handling of frontmatter", e
+        if e.stack?
+            console.log e.stack
+        if cb?
+            cb e
+
+___.open 'readRaw', (raw, cb)->
+    try
+        if !cb? or !_.isFunction cb
+            throw new TypeError "Expected callback to be a function."
+        parsed = frontmatter.parse raw
+        @handleFrontMatter parsed, cb
+    catch e
+        console.error "Error during readRaw:", e
+        if e.stack?
+            console.log e.stack
+        if cb? and _.isFunction cb
+            cb e
+    
+
+___.open 'readFile', (file, cb)->
+    try
+        self = @
+        if !cb? or !_.isFunction cb
+            throw new TypeError "Expected callback to be a function."
         frontmatter.parseFile file, (err, frontdata)->
             if err
                 cb err
-            unless frontdata?
-                throw new Error "Expected data from FrontMatter. Have you added {{{metadata}}} to your post?"
-            {body, attributes} = frontdata
-            output = marked body
-            if output?
-                post = {
-                    model: {
-                        attributes: attributes
-                        content: output
-                        raw: body
-                    }
-                }
-                renderPromise = renderer post
-                renderPromise.then (converted)->
-                    cb null, converted
-                , (e)->
-                    console.log "Error during rendering:", e
-                    cb e
                 return
-            cb new Error "No output."
+            self.handleFrontMatter frontdata, cb
             return
         return @
     catch e
-        console.error "Error during delivery: ", e
+        console.error "Error during readFile: ", e
         if e.stack?
             console.log e.stack
-        cb e
+        if cb? and _.isFunction cb
+            cb e
 
-___.open 'deliverAsPromise', (file, renderer)->
+___.open 'readRawAsPromise', (raw, renderer)->
     d = new Deferred()
-    @deliver file, renderer, (err, data)->
+    @readRaw raw, renderer, (err, data)->
+        if err?
+            d.reject err
+            return
+        d.resolve data
+    return d
+
+___.open 'readFileAsPromise', (file, renderer)->
+    d = new Deferred()
+    @readFile file, renderer, (err, data)->
         if err?
             d.reject err
             return
