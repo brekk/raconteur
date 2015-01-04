@@ -10,6 +10,8 @@ utility = require 'gulp-util'
 watch = require 'gulp-watch'
 plumber = require 'gulp-plumber'
 
+chalk = require 'chalk'
+
 cpr = require 'cp-r'
 mkdirp = require 'mkdirp'
 del = require 'del'
@@ -117,15 +119,17 @@ gulp.task 'convert:coffee:wrapped', ()->
     pipeNotification stream, notification
     stream.pipe gulp.dest destination
 
-gulp.task 'copy:test:fixtures', (done)->
+gulp.task 'test:copy-fixtures', (done)->
     source = structure.build.paths.source.fixtures
     dest = process.cwd() + '/test/fixtures'
-    finish = _.once done
+    finish = _.once ()->
+        console.log "copied files from #{source} to #{dest}"
+        done()
     cpr(source, dest).read finish
     return
 
-gulp.task 'convert:coffee:tests', [
-    'copy:test:fixtures'
+gulp.task 'test:coffee', [
+    'test:copy-fixtures'
 ],()->
     destination = './test'
     source = structure.build.paths.source.tests
@@ -227,9 +231,14 @@ gulp.task 'build', [
     'build:templates'
 ]
 
+gulp.task 'test:erase', ()->
+    del [
+        'test'
+    ]
+
 gulp.task 'test', [
-    'copy:test:fixtures'
-    'convert:coffee:tests'
+    'test:copy-fixtures'
+    'test:coffee'
 ], ()->
     destination = './test'
     gulp.src './test/*.js'
@@ -239,6 +248,7 @@ gulp.task 'test', [
 gulp.task 'clean', ()->
     del [
         'build'
+        'test'
     ]
 
 gulp.task 'build:templates', ['convert:dust'], ()->

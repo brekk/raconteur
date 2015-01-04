@@ -96,11 +96,11 @@ Templateur = {
 
     ###*
     * 
-    * @method createByPromise
+    * @method createAsPromise
     * @param {String} name - name of cached template (added via self.add)
     * @param {Object} object - the 
     ###
-    createByPromise: (name, object)->
+    createAsPromise: (name, object)->
         self = @
         # our dust render wrapper
         render = (data)->
@@ -158,12 +158,12 @@ Templateur = {
 
     ###*
     * Read a file or files and add them to the dust.cache via 
-    * @method loadFileByPromise
+    * @method loadFileAsPromise
     * @param {String|Array} fileToLoad - String or Array of objects which have the format: {file, name, vivify}
     * @param {null|String} addAsTemplate - null or String
     * @param {Boolean|Object} vivify - boolean or object
     ###
-    loadFileByPromise: (fileToLoad, addAsTemplate=null, vivify=false)->
+    loadFileAsPromise: (fileToLoad, addAsTemplate=null, vivify=false)->
         self = @
         if _.isArray fileToLoad
             # because our main function always returns a promise
@@ -183,7 +183,7 @@ Templateur = {
                         args.push item.vivify
                 # call the arguments by function.apply
                 # the returned result will always be a promise
-                return self.loadFileByPromise.apply self, args
+                return self.loadFileAsPromise.apply self, args
             ).compact().value()
 
         # make yo'self a deferred
@@ -216,11 +216,11 @@ Templateur = {
                     if vivify? and vivify
                         if !_.isObject vivify
                             # give back a promise-returning function
-                            d.resolve self.createByPromise addAsTemplate
+                            d.resolve self.createAsPromise addAsTemplate
                             return
                         else
                             # give back a fully transformed template
-                            self.createByPromise(addAsTemplate, vivify).then (resolved)->
+                            self.createAsPromise(addAsTemplate, vivify).then (resolved)->
                                 # ressy res
                                 d.resolve resolved
                                 return

@@ -73,18 +73,18 @@ ___.open 'readFile', (file, cb)->
         if cb? and _.isFunction cb
             cb e
 
-___.open 'readRawAsPromise', (raw, renderer)->
+___.open 'readRawAsPromise', (raw)->
     d = new Deferred()
-    @readRaw raw, renderer, (err, data)->
+    @readRaw raw, (err, data)->
         if err?
             d.reject err
             return
         d.resolve data
     return d
 
-___.open 'readFileAsPromise', (file, renderer)->
+___.open 'readFileAsPromise', (file)->
     d = new Deferred()
-    @readFile file, renderer, (err, data)->
+    @readFile file, (err, data)->
         if err?
             d.reject err
             return

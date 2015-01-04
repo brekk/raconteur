@@ -49,7 +49,7 @@ rantify = (model)->
                 callback test
         beforeEach reset
         afterEach reset
-        describe 'Templateur (a dust + jade converter)', ()->
+        describe 'Templateur', ()->
             describe '.getSugarFiletype', ()->
                 it 'should be .sugar by default', ()->
                     $.getSugarFiletype().should.equal '.sugar'
@@ -111,14 +111,14 @@ rantify = (model)->
                                 if templated?
                                     done()
 
-            describe '.createByPromise', ()->
+            describe '.createAsPromise', ()->
                 it 'should return a function that returns a promise, given only one parameter', (finish)->
                     count = _.size fixture.templates
                     done = _.after count, finish
                     _(fixture.templates).each (test, index)->
                         customAdd test, (out)->
                             {name, template, model, options} = out
-                            fx = $.createByPromise name
+                            fx = $.createAsPromise name
                             fx.should.be.a.Function
                             promiseTest = fx(model)
                             promiseTest.then.should.be.ok
@@ -134,7 +134,7 @@ rantify = (model)->
                     _(fixture.templates).each (test, index)->
                         customAdd test, (out)->
                             {name, template, model, options} = out
-                            promiseTest = $.createByPromise name, model
+                            promiseTest = $.createAsPromise name, model
                             promiseTest.then.should.be.ok
                             happy = (resolved)->
                                 resolved.should.be.ok
@@ -160,9 +160,9 @@ rantify = (model)->
                         throw e
                     sugarPromise.then resolve, reject
 
-            describe '.loadFileByPromise', ()->
+            describe '.loadFileAsPromise', ()->
                 it 'should read a file via promise when given only one parameter', (done)->
-                    loadFileOp = $.loadFileByPromise path.normalize process.cwd() + '/' + fixture.files.parameters.one.path
+                    loadFileOp = $.loadFileAsPromise path.normalize process.cwd() + '/' + fixture.files.parameters.one.path
                     loadFileOp.should.be.ok
                     loadFileOp.then.should.be.ok
                     happy = (output)->
@@ -175,7 +175,7 @@ rantify = (model)->
                 it 'should read a file via promise and add it to the dust.cache when given two parameters', (done)->
                     data = fixture.files.parameters.two
                     pathToFile = path.normalize process.cwd() + '/' + data.path
-                    addFileOp = $.loadFileByPromise pathToFile, data.name
+                    addFileOp = $.loadFileAsPromise pathToFile, data.name
                     addFileOp.should.be.ok
                     addFileOp.then.should.be.ok
                     happy = (output)->
@@ -189,7 +189,7 @@ rantify = (model)->
                     data = fixture.files.parameters.three.vivify
                     pathToFile = path.normalize process.cwd() + '/' + data.path
                     model = findInTemplates data.name
-                    vivifyFileOp = $.loadFileByPromise pathToFile, data.name, true
+                    vivifyFileOp = $.loadFileAsPromise pathToFile, data.name, true
                     vivifyFileOp.should.be.ok
                     vivifyFileOp.then.should.be.ok
                     sad = (e)->
@@ -206,7 +206,7 @@ rantify = (model)->
                     data = fixture.files.parameters.three['vivify-object']
                     pathToFile = path.normalize process.cwd() + '/' + data.path
                     model = findInTemplates data.vivify
-                    vivifyFileOp = $.loadFileByPromise pathToFile, data.name, model
+                    vivifyFileOp = $.loadFileAsPromise pathToFile, data.name, model
                     vivifyFileOp.should.be.ok
                     vivifyFileOp.then.should.be.ok
                     happy = (output)->

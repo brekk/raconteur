@@ -17,7 +17,7 @@ path = require 'path'
                 return fixteur.tests[method]
             console.log chalk.red "No fixture for #{method} found, are you sure you added it to fixtures/postmaster.json file?"
             return null
-        describe 'Postmasteur (a markdown plus front-matter converter)', ()->
+        describe 'Postmasteur', ()->
 
             describe '.setPath', ()->
                 it 'should set the path value of the Postmaster', (done)->
@@ -44,8 +44,24 @@ path = require 'path'
                             o.content.should.be.ok
                             finish()
 
+            describe '.readFileAsPromise', ()->
+                it 'should read a file and return a promise which returns a parsed object', (done)->
+                    list = harness 'readFile'
+                    finish = _.after list.length, done
+                    _(list).each (file)->
+                        adjustedPath = path.resolve __dirname, file
+                        $.readFileAsPromise(adjustedPath).then (o)->
+                            o.should.be.ok
+                            o.attributes.should.be.ok
+                            o.content.should.be.ok
+                            finish()
+                        , (e)->
+                            console.log "There was an error during readFileAsPromise", e
+                            if e.stack?
+                                console.log e.stack
+
             describe '.readRaw', ()->
-                it 'should read a file and return a parsed object', (done)->
+                it 'should read raw content and return a parsed object', (done)->
                     list = harness 'readRaw'
                     finish = _.after list.length, done
                     _(list).each (content)->
@@ -55,8 +71,20 @@ path = require 'path'
                             o.content.should.be.ok
                             finish()
 
-
-            describe '.deliverAsPromise', ()->
+            describe '.readRawAsPromise', ()->
+                it 'should read raw content and return a promise which returns a parsed object', (done)->
+                    list = harness 'readRaw'
+                    finish = _.after list.length, done
+                    _(list).each (content)->
+                        $.readRawAsPromise(content).then (o)->
+                            o.should.be.ok
+                            o.attributes.should.be.ok
+                            o.content.should.be.ok
+                            finish()
+                        , (e)->
+                            console.log "There was an error during readRawAsPromise", e
+                            if e.stack?
+                                console.log e.stack
 
     catch e
         console.warn "Error during postman: ", e
