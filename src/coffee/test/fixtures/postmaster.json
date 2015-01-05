@@ -1,0 +1,16 @@
+{
+    "tests": {
+        "setPath": [
+            "./test.md",
+            "./something/test.md",
+            "./what/the/test.md"
+        ],
+        "readFile": [
+            "../content/test.md",
+            "../content/other-test.md"
+        ],
+        "readRaw": [
+            "{{{\n\t\"title\":\"some shia\",\n\t\"preview\":\"something\"\n}}}\nsome content"
+        ]
+    }
+}

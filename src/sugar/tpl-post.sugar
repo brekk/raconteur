@@ -1,6 +1,7 @@
 article.post
     .content
-        .drawn(role="drawn-content")|{model.attributes.image}
+        .drawn(role="drawn-content")
+            img(src="{model.attributes.image}")
         .written
             header
                 h1.title(role="title")|{model.attributes.title}

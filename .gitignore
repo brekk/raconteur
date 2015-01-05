@@ -39,3 +39,9 @@ build
 
 # POSTS
 posts
+content
+
+# Tests
+/test
+!src/coffee/test/*.coffee
+!src/coffee/test/fixtures/*.json
