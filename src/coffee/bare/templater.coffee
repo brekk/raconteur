@@ -68,6 +68,21 @@ Templateur = {
         if name
             return _.contains dustKeys, name
 
+    remove: (name)->
+        d = new Deferred()
+        (->
+            if _.isString name
+                if dust.cache[name]?
+                    delete dust.cache[name]
+                    d.resolve true
+                else
+                    d.resolve true
+            else
+                d.reject new TypeError "Expected name to be a string."
+        )()
+        return d
+
+
     # invoked with 3 arguments, will invoke callback with
     # rendered text or an error (#outcome)
     # invoked with 1 argument, will return a function which
@@ -129,32 +144,38 @@ Templateur = {
     * @param {Object} options - the options to give to jade (currently unused)
     ###
     convertSugarToDust: (sugarContent, data, options)->
-        d = postpone()
-        self = @
-        reference = {
-            warning: false
-        }
-        unless data?
-            data = {}
-        unless options?
-            options = {}
-        # jade has no silent option, so this is a temporary hack
-        if console.warn?
-            reference.warning = console.warn
-            console.warn = (()->)
-        # immediate function
-        (->
-            output = jade.compile sugarContent, options
-            # resolve our compiled content
-            d.resolve output data
-            # restore the console.warn function
-            console.warn = reference.warning
-            # and delete our reference to it
-            delete reference.warning
-            return
-        )()
-        # return the promise
-        return d
+        try
+            d = postpone()
+            self = @
+            reference = {
+                warning: false
+            }
+            unless data?
+                data = {}
+            unless options?
+                options = {}
+            # jade has no silent option, so this is a temporary hack
+            if console.warn?
+                reference.warning = console.warn
+                console.warn = (()->)
+            # immediate function
+            (->
+                output = jade.compile sugarContent, options
+                # resolve our compiled content
+                d.resolve output data
+                # restore the console.warn function
+                console.warn = reference.warning
+                # and delete our reference to it
+                delete reference.warning
+                return
+            )()
+            # return the promise
+            return d
+        catch e
+            console.log 'Error converting jade to dust:', e
+            d.reject e
+            if e.stack?
+                console.log e.stack
 
     ###*
     * Read a file or files and add them to the dust.cache via 

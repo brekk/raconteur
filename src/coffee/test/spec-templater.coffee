@@ -82,6 +82,17 @@ rantify = (model)->
                             {name, template, model, options} = out
                             dust.cache.should.have.property name
                             finish()
+            describe '.remove', ()->
+                it 'should remove an existing template from the dust.cache', (done)->
+                    count = _.size fixture.templates
+                    finish = _.after (count*2), done
+                    _(fixture.templates).each (test)->
+                        customAdd test, (out)->
+                            {name, template, model, options} = out
+                            dust.cache.should.have.property name
+                            finish()
+                            $.remove(test.name).then ()->
+                                finish()
             describe '.has', ()->
                 it "should prove that a template has been added to the dust.cache", ()->
                     _(fixture.templates).each (test)->

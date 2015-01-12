@@ -1,10 +1,12 @@
 {
   "name": "raconteur",
   "version": "0.0.1",
-  "description": "A convenient markdown to blog content wrapper.",
+  "description": "A toolset for converting markdown and json to blog posts.",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --reporter spec",
+    "build": "./node_modules/.bin/gulp",
+    "test": "./node_modules/.bin/gulp default test",
+    "prepublish": "./node_modules/.bin/gulp default",
     "start": "node index.js"
   },
   "repository": {

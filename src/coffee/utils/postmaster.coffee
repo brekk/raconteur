@@ -45,13 +45,16 @@ ___.open 'readRaw', (raw, cb)->
         if !cb? or !_.isFunction cb
             throw new TypeError "Expected callback to be a function."
         parsed = frontmatter.parse raw
-        @handleFrontMatter parsed, cb
+        if parsed?
+            @handleFrontMatter parsed, cb
+        else
+            throw new Error "Nothing parsed from frontmatter."
     catch e
+        if cb? and _.isFunction cb
+            cb e
         console.error "Error during readRaw:", e
         if e.stack?
             console.log e.stack
-        if cb? and _.isFunction cb
-            cb e
     
 
 ___.open 'readFile', (file, cb)->
@@ -77,6 +80,7 @@ ___.open 'readRawAsPromise', (raw)->
     d = new Deferred()
     @readRaw raw, (err, data)->
         if err?
+            console.log "error during readraw as promise", err
             d.reject err
             return
         d.resolve data
