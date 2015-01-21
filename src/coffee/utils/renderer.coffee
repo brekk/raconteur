@@ -12,12 +12,10 @@ slug = _.wrap (require 'slug'), (fn)->
     ).value()
     return fn.apply null, args
 
-# console.log ">>> rendro stupendo\n\n", renderer
 properties = [
     "code"
     "blockquote"
     "html"
-    # "heading"
     "hr"
     "list"
     "listitem"
@@ -48,13 +46,11 @@ renderer.heading = (text, level)->
     unless level is 6
         # standard interpolation
         return "<#{header}#{ident}>#{text}</#{header}>"
+    # treat h6 as magic
     # magic header time!
-    # store a reference to it, probably?
-    # console.log "this is a magic header!", text
     first = text.substr 0, 1
     rest = text.substr 1
     parts = rest.split '-'
-    # console.log ">>>>> FIRSTO", first
     if '$' is first
         noop = (x)->
             return x

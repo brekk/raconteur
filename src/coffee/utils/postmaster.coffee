@@ -8,19 +8,23 @@ module.exports = Storytelleur = {}
 
 ___ = require('parkplace').scope Storytelleur
 
-___.writable 'path', ''
+___.secret '_renderer', marked
 
-___.open 'setPath', (path)->
-    if _.isString path
-        @path = path
+___.guarded 'setRenderer', (renderer)->
+    if renderer? and _.isFunction renderer
+        @_renderer = renderer
     return @
+
+___.guarded 'getRenderer', ()->
+    return @_renderer
 
 ___.guarded 'handleFrontMatter', (frontdata, cb)->
     try
         unless frontdata?
             throw new Error "Expected data from FrontMatter. Have you added {{{metadata}}} to your post?"
         {body, attributes} = frontdata
-        output = marked body
+        renderer = @getRenderer()
+        output = renderer body
         callbackable = cb? and _.isFunction cb
         if output?
             post = {

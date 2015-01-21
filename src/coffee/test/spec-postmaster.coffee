@@ -19,19 +19,6 @@ path = require 'path'
             return null
         describe 'Postmasteur', ()->
 
-            describe '.setPath', ()->
-                it 'should set the path value of the Postmaster', (done)->
-                    list = harness 'setPath'
-                    finish = _.after list.length, done
-                    _(list).each (x)->
-                        $.setPath(x)
-                        $.path.should.equal x
-                        finish()
-                    return
-
-            # describe '.handleRouting', ()->
-            #     it 'should process raw frontmatter'
-
             describe '.readFile', ()->
                 it 'should read a file and return a parsed object', (done)->
                     list = harness 'readFile'
