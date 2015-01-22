@@ -11,6 +11,7 @@ postpone = ()->
     d.nay = _.once d.reject
     return d
 
+debug = require('debug') 'raconteur:templater'
 
 Templateur = {
     sugarFiletype: '.sugar'
@@ -34,6 +35,7 @@ Templateur = {
         if type? and _.isString type
             if type[0] isnt '.'
                 type = '.' + type
+            debug ".setSugarFiletype: Setting sugar filetype: %s", type
             @sugarFiletype = type
         return @sugarFiletype
 
@@ -50,11 +52,14 @@ Templateur = {
             if !_.isString(name) or !_.isString(template)
                 d.reject new TypeError "Expected both name and template to be strings."
                 return
+            debug ".add: adding named template (%s) to dust"
             dust.loadSource dust.compile template, name
             d.resolve true
             return
         if sugar? and sugar
+            debug "converting from sugar first"
             @convertSugarToDust(templateString).then addToDust, (e)->
+                debug ".add: error during sugarToDust conversion: %s", e.toString()
                 d.reject e
                 return
             return d
@@ -67,6 +72,7 @@ Templateur = {
         dustKeys = _.keys(dust.cache)
         if name
             return _.contains dustKeys, name
+        return false
 
     remove: (name)->
         d = new Deferred()
@@ -74,8 +80,10 @@ Templateur = {
             if _.isString name
                 if dust.cache[name]?
                     delete dust.cache[name]
+                    debug ".remove: removed named template: %s", name
                     d.resolve true
                 else
+                    debug ".remove: no named template: %s", name
                     d.resolve true
             else
                 d.reject new TypeError "Expected name to be a string."
@@ -94,8 +102,10 @@ Templateur = {
             return false
         returnAsFunction = false
         if arguments.length is 1
+            debug ".create: will return as function, given one parameter"
             returnAsFunction = true
         unless self.has name
+            debug ".create: named template (%s) exists already"
             return false
         unless returnAsFunction
             if !cb? or !_.isFunction cb
@@ -103,9 +113,12 @@ Templateur = {
         else
             # returnAsFunction
             return (data, callback)->
+                debug ".create(->): render function invoked"
                 if !callback? or !_.isFunction callback
-                    callback = ()->
+                    throw new TypeError "Expected a callback."
+                    # callback = ()->
                 results = dust.render name, data, callback
+                debug ".create(->): successfully rendered"
                 return results
         return dust.render name, object, cb
 
@@ -120,17 +133,21 @@ Templateur = {
         # our dust render wrapper
         render = (data)->
             d = postpone()
+            debug "createAsPromise(->): render function invoked"
             dust.render name, data, (e, out)->
                 if e
                     d.reject e
                     return
+                debug: ".create(->): successfully rendered"
                 d.resolve out
                 return
             return d
         # if given both a name and an object, returns a promise of the resolved render
         if object? and _.isObject object
+            debug "createAsPromise: rendering and returning promise"
             return render object
         # if given only a name, will return a function which returns said promise
+        debug "createAsPromise: returning render function"
         return render
 
     ###*
@@ -162,6 +179,7 @@ Templateur = {
             (->
                 output = jade.compile sugarContent, options
                 # resolve our compiled content
+                debug "convertSugarToDust: converting..."
                 d.resolve output data
                 # restore the console.warn function
                 console.warn = reference.warning
@@ -172,7 +190,7 @@ Templateur = {
             # return the promise
             return d
         catch e
-            console.log 'Error converting jade to dust:', e
+            debug 'convertSugarToDust: error converting jade to dust: %s', e.toString()
             d.reject e
             if e.stack?
                 console.log e.stack
@@ -180,11 +198,11 @@ Templateur = {
     ###*
     * Read a file or files and add them to the dust.cache via 
     * @method loadFileAsPromise
-    * @param {String|Array} fileToLoad - String or Array of objects which have the format: {file, name, vivify}
+    * @param {String|Array} fileToLoad - String or Array of objects which have the format: {file, name, inflate}
     * @param {null|String} addAsTemplate - null or String
-    * @param {Boolean|Object} vivify - boolean or object
+    * @param {Boolean|Object} inflate - boolean or object
     ###
-    loadFileAsPromise: (fileToLoad, addAsTemplate=null, vivify=false)->
+    loadFileAsPromise: (fileToLoad, addAsTemplate=null, inflate=false)->
         self = @
         if _.isArray fileToLoad
             # because our main function always returns a promise
@@ -200,8 +218,8 @@ Templateur = {
                 if item.name?
                     args.push item.name
                     # if we have them
-                    if item.vivify?
-                        args.push item.vivify
+                    if item.inflate?
+                        args.push item.inflate
                 # call the arguments by function.apply
                 # the returned result will always be a promise
                 return self.loadFileAsPromise.apply self, args
@@ -233,15 +251,15 @@ Templateur = {
             addNamedTemplate = (content)->
                 # register the template with the content
                 self.add(addAsTemplate, content).then ()->
-                    # if vivify is either true or an object
-                    if vivify? and vivify
-                        if !_.isObject vivify
+                    # if inflate is either true or an object
+                    if inflate? and inflate
+                        if !_.isObject inflate
                             # give back a promise-returning function
                             d.resolve self.createAsPromise addAsTemplate
                             return
                         else
                             # give back a fully transformed template
-                            self.createAsPromise(addAsTemplate, vivify).then (resolved)->
+                            self.createAsPromise(addAsTemplate, inflate).then (resolved)->
                                 # ressy res
                                 d.resolve resolved
                                 return
