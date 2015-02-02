@@ -5,6 +5,7 @@ promise = require 'promised-io/promise'
 pfs = require 'promised-io/fs'
 path = require 'path'
 Deferred = promise.Deferred
+
 postpone = ()->
     d = new Deferred()
     d.yay = _.once d.resolve
@@ -68,7 +69,6 @@ Templateur = {
 
     # check for the existence of a key in the cache
     has: (name)->
-        self = @
         dustKeys = _.keys(dust.cache)
         if name
             return _.contains dustKeys, name
@@ -129,11 +129,9 @@ Templateur = {
     * @param {Object} object - the 
     ###
     createAsPromise: (name, object)->
-        self = @
         # our dust render wrapper
         render = (data)->
             d = postpone()
-            debug "createAsPromise(->): render function invoked"
             dust.render name, data, (e, out)->
                 if e
                     d.reject e
@@ -163,7 +161,6 @@ Templateur = {
     convertSugarToDust: (sugarContent, data, options)->
         try
             d = postpone()
-            self = @
             reference = {
                 warning: false
             }
@@ -279,6 +276,24 @@ Templateur = {
         # read the file, then proceed with either callback
         fileReadOp.then good, bad
         # give back the promise
+        return d
+
+    export: (prescript='', postscript='')->
+        d = postpone()
+        readFileOp = pfs.readFile __filename, {
+            charset: 'utf8'
+        }
+        good = (input)->
+            output = [input]
+            if _.isString(prescript) and prescript.length > 0
+                output.unshift prescript
+            if _.isString(postscript) and postscript.length > 0
+                output.push postscript
+            d.resolve output.join '\n'
+        bad = (e)->
+            console.log 'what the hell?', e
+            d.reject e
+        readFileOp.then good, bad
         return d
 }
 

@@ -45,3 +45,5 @@ content
 /test
 !src/coffee/test/*.coffee
 !src/coffee/test/fixtures/*.json
+.idea
+lib

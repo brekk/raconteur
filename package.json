@@ -5,8 +5,18 @@
   "main": "index.js",
   "scripts": {
     "build": "./node_modules/.bin/gulp",
+    "convert": "npm run convert-coffee && npm run convert-dust && npm run convert-stylus",
+    "convert-coffee": "./node_modules/.bin/coffee --compile --output lib/ src/coffee/",
+    "convert-dust": "",
+    "convert-stylus": "",
+    "bundle": "npm run bundle-build && npm run bundle-browserify",
+    "bundle-build": "./node_modules/.bin/coffee --compile --bare --output lib/bundles/ src/coffee/bundles",
+    "bundle-browserify": "(mkdir -p ./public/js || true) && ./node_modules/.bin/browserify lib/bundles/editor-bundle.js > public/js/editor-bundle.js",
+    "clean": "npm run clean-build && npm run clean-public",
+    "clean-build": "rm -rf ./lib",
+    "clean-public": "rm -rf ./public",
     "test": "./node_modules/.bin/gulp default test",
-    "prepublish": "./node_modules/.bin/gulp default",
+    "prepublish": "npm run build",
     "start": "node index.js"
   },
   "repository": {
@@ -38,6 +48,7 @@
     "jade": "~1.7.0",
     "json-front-matter": "~0.1.6",
     "marked": "^0.3.2",
+    "minimist": "^1.1.0",
     "mkdirp": "^0.5.0",
     "parkplace": "0.0.9",
     "promised-io": "^0.3.4",

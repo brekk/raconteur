@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 module.exports = {
-    postmaster: require('./build/postmaster'),
-    renderer: require('./build/renderer'),
-    templater: require('./build/templater'),
-    bundler: require('./build/postbundler')
+    postmaster: require('./lib/postmaster'),
+    renderer: require('./lib/renderer'),
+    templater: require('./lib/templater'),
+    bundler: require('./lib/postbundler')
 };

@@ -73,10 +73,9 @@ gulp.task 'move', [
 #     gulp.src structure.build.paths.content.markdown
 #         .pipe gulp.dest './build/posts'
 
-    
 gulp.task 'move:assets', ()->
     gulp.src structure.build.paths.content.assets
-        .pipe gulp.dest './build/public/images'
+        .pipe gulp.dest './lib/public/images'
 
 gulp.task 'convert', [
     'convert:coffee'
@@ -110,7 +109,7 @@ gulp.task 'convert:coffee:wrapped', ()->
             return string
         onLast: true
     }
-    destination = './build'
+    destination = './lib'
     source = structure.build.paths.source.coffee
     source.push "!" + structure.build.paths.source.barecoffee
     stream = gulp.src source
@@ -155,7 +154,7 @@ gulp.task 'convert:coffee:bare', ()->
             return string
         onLast: true
     }
-    destination = './build'
+    destination = './lib'
     source = structure.build.paths.source.barecoffee
     stream = gulp.src source
                  .pipe coffee {bare: true}
@@ -165,7 +164,7 @@ gulp.task 'convert:coffee:bare', ()->
 
 # convert some stylus files
 gulp.task 'convert:stylus', ()->
-    destination = './build/public/css'
+    destination = './lib/public/css'
     files = []
     sayOnce = _.once ()->
         console.log '[ ' + files.join(', ') + ' ]'
@@ -186,7 +185,7 @@ gulp.task 'convert:stylus', ()->
 
 # convert some dustjs files
 gulp.task 'convert:dust', ['move', 'convert:coffee:bare'], ()->
-    destination = './build'
+    destination = './lib'
 
     dustPipe = gulp.src structure.build.paths.source.dust
                    .pipe dust()
@@ -252,10 +251,10 @@ gulp.task 'clean', ()->
     ]
 
 gulp.task 'build:templates', ['convert:dust'], ()->
-    destination = './build'
+    destination = './lib'
     sources = [
-        './build/blacksmith.js'
-        './build/bundled-templates.js'
+        './lib/blacksmith.js'
+        './lib/bundled-templates.js'
     ]
     gulp.src sources
         .pipe concat './templates.js'
