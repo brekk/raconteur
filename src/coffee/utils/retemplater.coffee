@@ -11,6 +11,7 @@ Deferred = promise.Deferred
 fs = require 'fs'
 path = require 'path'
 
+# Generate a new copy of the templater with some additional stuff in it
 Retemplater = (settings)->
     self = @
     defaultOptions = {
@@ -18,7 +19,7 @@ Retemplater = (settings)->
         output: ''
         sugar: false
         inflate: true
-        jit: false
+        mode: 'jit' # jit | inline | inline-convert
         spaces: 4
     }
     construct = (opts)->
@@ -41,7 +42,8 @@ Retemplater = (settings)->
         self.options = options
         return self
 
-    self.convertTabbedMultiline = (input, spaces)->
+    # escape spaced/indented input as tabs
+    self.escapeTabs = (input, spaces)->
         unless spaces?
             spaces = self.options.spaces
         # convert unfriendly sugar to js safe strings
@@ -49,19 +51,32 @@ Retemplater = (settings)->
         regex = new RegExp tabEscape, 'g'
         return JSON.stringify input.replace regex, "\t"
 
+    # return a postscript to the template file
     self.getPostScript = (input)->
-        templateName = _.last self.options.input.split '/'
-        if self.options.jit
-            return """
-            Templateur.loadFileAsPromise("#{self.options.input}", "#{templateName}", #{self.options.inflate});
-            }).call(this);
-            """
-        else
-            escapedInput = self.convertTabbedMultiline input
-            return """
-            Templateur.add("#{templateName}", #{escapedInput}, #{self.options.sugar});
-            }).call(this);
-            """
+        d = new Deferred()
+        (->
+            templateName = _.last self.options.input.split '/'
+            if self.options.mode is 'jit'
+                d.resolve """
+                Templateur.loadFileAsPromise("#{self.options.input}", "#{templateName}", #{self.options.inflate});
+                }).call(this);
+                """
+            else if self.options.mode is 'inline'
+                escapedInput = self.escapeTabs input
+                d.resolve """
+                Templateur.add("#{templateName}", #{escapedInput}, #{self.options.sugar});
+                }).call(this);
+                """
+            else if self.options.mode is 'inline-convert'
+                templater.convertSugarToDust(input).then (output)->
+                    d.resolve """
+                    Templateur.add("#{templateName}", #{JSON.stringify(output)});
+                    }).call(this);
+                    """ 
+                , (e)->
+                    d.reject e
+        )()
+        return d 
 
     self.getPreScript = ()->
         return """
@@ -69,6 +84,7 @@ Retemplater = (settings)->
         "use strict"
         """
 
+    # read a file with promises
     self.readFile = (input, opts)->
         d = new Deferred()
         unless input?
@@ -81,10 +97,13 @@ Retemplater = (settings)->
             d.resolve read
         return d
 
-    self.exportFile = (input, opts)->
+    # export the templater with some new prefixed and postfixed content
+    self.exportFile = (input, output, opts)->
         d = new Deferred()
         unless input?
             input = self.options.input
+        unless output?
+            output = self.options.output
         options = _.assign {charset: 'utf8'}, opts
 
         fail = (e)->
@@ -93,14 +112,7 @@ Retemplater = (settings)->
         pre = self.getPreScript()
 
         addPostScript = (file)->
-            p = new Deferred()
-            (->
-                try
-                    p.resolve self.getPostScript file.toString()
-                catch e
-                    p.reject e
-            )()
-            return p
+            self.getPostScript file
 
         wrapFile = (post)->
             templaterFile = path.resolve __dirname, './templater.js'
@@ -109,11 +121,22 @@ Retemplater = (settings)->
         addInputFile = ()->
             self.readFile(input, options)
 
+        writeOut = (file)->
+            w = new Deferred()
+            fs.writeFile output, file, options, (e)->
+                if e?
+                    w.reject e
+                    return
+                w.resolve true
+                return
+            return w
+
         instructions = [
             addPostScript
             wrapFile
+            writeOut
         ]
-        unless self.options.jit
+        unless self.options.mode is 'jit'
             instructions.unshift addInputFile
 
         promise.seq(instructions).then (done)->
@@ -121,8 +144,6 @@ Retemplater = (settings)->
         , fail
 
         return d
-
-
 
     return construct settings
 
