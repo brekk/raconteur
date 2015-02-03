@@ -53,7 +53,8 @@
     "parkplace": "0.0.9",
     "promised-io": "^0.3.4",
     "rantjs": "^0.9.1",
-    "slug": "~0.8.0"
+    "slug": "~0.8.0",
+    "wrap-stream": "^2.0.0"
   },
   "devDependencies": {
     "browserify": "^5.11.2",

@@ -277,24 +277,6 @@ Templateur = {
         fileReadOp.then good, bad
         # give back the promise
         return d
-
-    export: (prescript='', postscript='')->
-        d = postpone()
-        readFileOp = pfs.readFile __filename, {
-            charset: 'utf8'
-        }
-        good = (input)->
-            output = [input]
-            if _.isString(prescript) and prescript.length > 0
-                output.unshift prescript
-            if _.isString(postscript) and postscript.length > 0
-                output.push postscript
-            d.resolve output.join '\n'
-        bad = (e)->
-            console.log 'what the hell?', e
-            d.reject e
-        readFileOp.then good, bad
-        return d
 }
 
 module.exports = Templateur
