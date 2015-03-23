@@ -337,7 +337,16 @@ if config?.sync?.hosts?
         # 'sync:test:host'
         addFolder 'test'
 
-
+gulp.task 'tasks', ()->
+    console.log _(gulp.tasks).map((value, key)->
+        hash = {}
+        if 0 < _.size value.dep
+            hash[key] = value.dep
+        return hash
+    ).reduce((carrier, iter)->
+        return _.extend carrier, iter
+    , {})
+    return
 
 gulp.task 'default', [
     'move'

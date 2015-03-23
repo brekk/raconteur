@@ -36,14 +36,12 @@ src/coffee/**/*.js
 
 # TEMPORARY / VOLATILE FOLDERS
 build
-
-# POSTS
-posts
-content
+lib
 
 # Tests
-/test
+/test/*.js
 !src/coffee/test/*.coffee
 !src/coffee/test/fixtures/*.json
+!src/coffee/test/fixtures/*.md
+!src/coffee/test/fixtures/*.sugar
 .idea
-lib
