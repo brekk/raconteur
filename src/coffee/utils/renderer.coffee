@@ -3,6 +3,7 @@ _ = require 'lodash'
 marked = require 'marked'
 renderer = new marked.Renderer()
 
+###
 # wrap slug with forced lowercase behavior
 slug = _.wrap (require 'slug'), (fn)->
     args = _(_.rest(arguments)).map((x)->
@@ -134,6 +135,7 @@ renderer.heading = (text, level)->
 
         ).value()
     return ""
+###
 
 module.exports = (body, r)->
     if r? and r instanceof marked.Renderer

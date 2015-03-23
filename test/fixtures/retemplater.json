@@ -1,0 +1,16 @@
+{
+    "tests": {
+        "escapeTabs": [{
+            "tabs": 4,
+            "input": "article.post\n    .content\n        .drawn(role=\"drawn-content\")\n            img(src=\"{model.attributes.image}\")\n        .written\n            header\n                h1.title(role=\"title\")|{model.attributes.title}\n                h2.subtitle(role=\"subtitle\")|{model.attributes.subtitle}\n                ul.tags|{#model.attributes.tags}\n                    li.tag|{.}\n                    {/model.attributes.tags}\n            .data(role=\"written-content\")|{model.content|s}\n        footer\n            .meta(data-timestamp=\"0\")\n                .time(role=\"timestamp\")|{model.attributes.timestamp}\n                .category(role=\"category\")|{model.attributes.category}",
+            "output": "\"article.post\\n\\t.content\\n\\t\\t.drawn(role=\\\"drawn-content\\\")\\n\\t\\t\\timg(src=\\\"{model.attributes.image}\\\")\\n\\t\\t.written\\n\\t\\t\\theader\\n\\t\\t\\t\\th1.title(role=\\\"title\\\")|{model.attributes.title}\\n\\t\\t\\t\\th2.subtitle(role=\\\"subtitle\\\")|{model.attributes.subtitle}\\n\\t\\t\\t\\tul.tags|{#model.attributes.tags}\\n\\t\\t\\t\\t\\tli.tag|{.}\\n\\t\\t\\t\\t\\t{/model.attributes.tags}\\n\\t\\t\\t.data(role=\\\"written-content\\\")|{model.content|s}\\n\\t\\tfooter\\n\\t\\t\\t.meta(data-timestamp=\\\"0\\\")\\n\\t\\t\\t\\t.time(role=\\\"timestamp\\\")|{model.attributes.timestamp}\\n\\t\\t\\t\\t.category(role=\\\"category\\\")|{model.attributes.category}\""
+        }, {
+            "tabs": 2,
+            "input": "article.post\n  .content\n    .drawn(role=\"drawn-content\")\n      img(src=\"{model.attributes.image}\")\n    .written\n      header\n        h1.title(role=\"title\")|{model.attributes.title}\n        h2.subtitle(role=\"subtitle\")|{model.attributes.subtitle}\n        ul.tags|{#model.attributes.tags}\n          li.tag|{.}\n        {/model.attributes.tags}\n      .data(role=\"written-content\")|{model.content|s}\n    footer\n      .meta(data-timestamp=\"0\")\n        .time(role=\"timestamp\")|{model.attributes.timestamp}\n        .category(role=\"category\")|{model.attributes.category}"
+        }],
+        "getPostScript": "",
+        "getPreScript": "",
+        "readFile": "",
+        "exportFile": ""
+    }
+}

@@ -13,7 +13,7 @@ path = require 'path'
 
 # Generate a new copy of the templater with some additional stuff in it
 Retemplater = (settings)->
-    self = @
+    self = {}
     defaultOptions = {
         input: ''
         output: ''

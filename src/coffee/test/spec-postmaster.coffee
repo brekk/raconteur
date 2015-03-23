@@ -10,8 +10,6 @@ path = require 'path'
 (($)->
     "use strict"
     try
-        reset = ()->
-            Postmasteur
         harness = (method)->
             if fixteur.tests[method]?
                 return fixteur.tests[method]

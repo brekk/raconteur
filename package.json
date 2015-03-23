@@ -13,7 +13,7 @@
     "convert": "npm run convert-bare && npm run convert-cli && npm run convert-test && npm run convert-utils",
     "convert-bare": "./node_modules/.bin/coffee --bare --compile --output ./lib/ src/coffee/bare",
     "convert-cli": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/cli",
-    "convert-test": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/test",
+    "convert-test": "./node_modules/.bin/coffee --compile --output ./test/ src/coffee/test",
     "convert-utils": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/utils",
     "test": "npm run build && ./node_modules/.bin/mocha --reporter spec",
     "prepublish": "npm run build",
