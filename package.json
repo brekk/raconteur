@@ -4,22 +4,18 @@
   "description": "A toolset for converting markdown and json to blog posts.",
   "main": "index.js",
   "scripts": {
-    "build": "npm run create && npm run copy-fixtures && ./node_modules/.bin/gulp",
-    "convert": "npm run convert-coffee && npm run convert-dust && npm run convert-stylus",
-    "convert-coffee": "./node_modules/.bin/coffee --compile --output lib/ src/coffee/",
-    "create": "npm run create-build && npm run create-lib && npm run create-content",
-    "create-build": "(mkdir ./build || true)",
-    "create-lib": "(mkdir ./lib || true)",
-    "create-content": "(mkdir ./content || true)",
-    "copy-fixtures": "npm run create-content && cp ./src/coffee/test/fixtures/*.md ./content/.",
-    "convert-dust": "",
-    "convert-stylus": "",
-    "bundle": "npm run bundle-build && npm run bundle-browserify",
-    "bundle-build": "./node_modules/.bin/coffee --compile --bare --output lib/bundles/ src/coffee/bundles",
+    "build": "npm run clean && npm run create && npm run convert",
     "clean": "npm run clean-build && npm run clean-public",
     "clean-build": "rm -rf ./lib",
     "clean-public": "rm -rf ./public",
-    "test": "npm run create && npm run copy-fixtures && ./node_modules/.bin/gulp default test",
+    "create": "npm run create-lib",
+    "create-lib": "(mkdir ./lib || true)",
+    "convert": "npm run convert-bare && npm run convert-cli && npm run convert-test && npm run convert-utils",
+    "convert-bare": "./node_modules/.bin/coffee --bare --compile --output ./lib/ src/coffee/bare",
+    "convert-cli": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/cli",
+    "convert-test": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/test",
+    "convert-utils": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/utils",
+    "test": "npm run build && ./node_modules/.bin/mocha --reporter spec",
     "prepublish": "npm run build",
     "start": "node index.js"
   },
@@ -99,6 +95,7 @@
     "vinyl": "^0.4.5",
     "vinyl-fs": "~0.3.7",
     "vinyl-source-stream": "^1.0.0",
-    "yuidocjs": "~0.3.50"
+    "yuidocjs": "~0.3.50",
+    "mocha": "~2.2.1"
   }
 }

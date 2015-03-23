@@ -5,11 +5,11 @@
             "template": "article.post\n\t.content\n\t\t.drawn(role=\"drawn-content\")\n\t\t\timg(src=\"{model.attributes.image}\")\n\t\t.written\n\t\t\theader\n\t\t\t\th1.title(role=\"title\")|{model.attributes.title}\n\t\t\t\th2.subtitle(role=\"subtitle\")|{model.attributes.subtitle}\n\t\t\t\tul.tags|{#model.attributes.tags}\n\t\t\t\t\tli.tag|{.}\n\t\t\t\t\t{/model.attributes.tags}\n\t\t\t.data(role=\"written-content\")|{model.content|s}\n\t\tfooter\n\t\t\t.meta(data-timestamp=\"0\")\n\t\t\t\t.time(role=\"timestamp\")|{model.attributes.timestamp}\n\t\t\t\t.category(role=\"category\")|{model.attributes.category}",
             "model": {
                 "model": {
-                    "content": "[case:sentence]I told you fuckers to listen, but now I have to <verb> your <noun body>.",
+                    "content": "[case:sentence]I told you to listen, but now I have to <verb> your <noun body>.",
                     "attributes": {
                         "image": "test.png",
-                        "title": "[case:sentence]The <adj> <noun nsfw> finally decides to <verb nsfw> the <activity sport>.",
-                        "subtitle": "[case:sentence]<adj> <noun nsfw plural> <place>",
+                        "title": "[case:sentence]The <adj> <noun> finally decides to <verb> the <activity sport>.",
+                        "subtitle": "[case:sentence]<adj> <noun plural> <place>",
                         "category": "<adv> <adj> <noun body>"
                     }
                 }
@@ -30,21 +30,21 @@
     "files": {
         "parameters": {
             "one": {
-                "path": "src/sugar/tpl-preview.sugar"
+                "path": "test/sugar/tpl-preview.sugar"
             },
             "two": {
                 "name": "post",
-                "path": "src/sugar/tpl-post.sugar"
+                "path": "test/sugar/tpl-post.sugar"
             },
             "three": {
                 "vivify": {
                     "name": "post",
-                    "path": "src/sugar/tpl-post.sugar",
+                    "path": "test/sugar/tpl-post.sugar",
                     "vivify": true
                 },
                 "vivify-object": {
                     "name": "post",
-                    "path": "src/sugar/tpl-post.sugar",
+                    "path": "test/sugar/tpl-post.sugar",
                     "vivify": "post"
                 }
             }
