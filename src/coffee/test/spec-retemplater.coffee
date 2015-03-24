@@ -23,12 +23,9 @@ path = require 'path'
         describe "Retemplateur", ()->
             describe ".escapeTabs", ()->
                 it "should converted unescaped strings to tab-escaped strings", (done)->
-                    console.log 'typeof done', typeof done
                     data = harness 'escapeTabs'
                     size = _.size(data)
-                    console.log "size", size
                     finish = _.after size, done
-                    console.log "what finish", typeof finish
                     _(data).each (item)->
                         transformed = $.escapeTabs item.input
                         transformed.should.equal item.output

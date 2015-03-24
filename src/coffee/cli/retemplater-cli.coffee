@@ -4,7 +4,7 @@ _ = require 'lodash'
 debug = require('debug')('raconteur:retemplater:cli')
 # debug = console.log
 Retemplater = require './retemplater'
-opts = require('minimist') process.argv.slice 2
+opts = require('optimist') process.argv.slice 2
 
 fs = require 'fs'
 path = require 'path'

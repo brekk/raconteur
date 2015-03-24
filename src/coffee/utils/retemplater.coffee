@@ -139,9 +139,10 @@ Retemplater = (settings)->
         unless self.options.mode is 'jit'
             instructions.unshift addInputFile
 
-        promise.seq(instructions).then (done)->
+        succeed = (done)->
             d.resolve done
-        , fail
+        
+        promise.seq(instructions).then succeed, fail
 
         return d
 

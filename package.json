@@ -86,6 +86,8 @@
     "gulp-watch": "^1.0.4",
     "gulp-yuidoc": "^0.1.2",
     "lodash": "^2.4.1",
+    "mocha": "^2.2.1",
+    "optimist": "^0.6.1",
     "rantjs": "^0.9.1",
     "should": "^4.4.2",
     "source-map": "~0.1.39",
@@ -95,7 +97,6 @@
     "vinyl": "^0.4.5",
     "vinyl-fs": "~0.3.7",
     "vinyl-source-stream": "^1.0.0",
-    "yuidocjs": "~0.3.50",
-    "mocha": "~2.2.1"
+    "yuidocjs": "~0.3.50"
   }
 }
