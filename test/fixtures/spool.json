@@ -1,11 +1,11 @@
 {
     "tests": {
         "add": [
-            "../sugar/tpl-post.sugar",
-            "../sugar/tpl-page.sugar"
+            "./sugar/tpl-post.sugar",
+            "./sugar/tpl-page.sugar"
         ],
         "remove": [
-            "../sugar/tpl-page.sugar"
+            "./sugar/tpl-page.sugar"
         ]        
     }
 }
