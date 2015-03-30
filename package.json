@@ -10,11 +10,12 @@
     "clean-public": "rm -rf ./public",
     "create": "npm run create-lib",
     "create-lib": "(mkdir ./lib || true)",
-    "convert": "npm run convert-bare && npm run convert-cli && npm run convert-test && npm run convert-utils",
+    "convert": "npm run convert-bare && npm run convert-cli && npm run convert-test && npm run convert-core && npm run convert-utils",
     "convert-bare": "./node_modules/.bin/coffee --bare --compile --output ./lib/ src/coffee/bare",
     "convert-cli": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/cli",
     "convert-test": "./node_modules/.bin/coffee --compile --output ./test/ src/coffee/test",
     "convert-utils": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/utils",
+    "convert-core": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/core",
     "test": "npm run build && ./node_modules/.bin/mocha --reporter spec",
     "prepublish": "npm run build",
     "start": "node index.js"

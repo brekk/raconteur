@@ -21,13 +21,13 @@ path = require 'path'
             return done()
         beforeEach reset
         describe "Spool", ()->
-            describe 'add', ()->
+            describe '.add', ()->
                 it "should be able to add unadorned strings as filenames", ()->
                     addTests = harness 'add'
                     out = $.add.apply $, addTests
                     _(addTests).each (test)->
                         _(out).contains(test).should.equal true
-            describe 'remove', ()->
+            describe '.remove', ()->
                 it "should be able to remove unadorned strings as filenames", ()->
                     addTests = harness 'add'
                     out = $.add.apply $, addTests
@@ -37,7 +37,7 @@ path = require 'path'
                     out = $.remove.apply $, removeTests
                     _(removeTests).each (test)->
                         _(out).contains(test).should.equal false
-            describe 'readFile', ()->
+            describe '.readFile', ()->
                 it "should promise to read a given file", (done)->
                     addTests = harness 'add'
                     succeed = (x)->
@@ -47,7 +47,7 @@ path = require 'path'
                         e.should.not.be.ok
                         done()
                     $.readFile(addTests[0]).then succeed, fail
-            describe 'resolve', ()->
+            describe '.resolve', ()->
                 it "should be able to resolve the filenames and convert them to their raw inputs", (done)->
                     addTests = harness 'add'
                     out = $.add.apply $, addTests

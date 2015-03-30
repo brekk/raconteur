@@ -4,10 +4,10 @@ Deferred = promise.Deferred
 marked = require './renderer'
 frontmatter = require 'json-front-matter'
 
-module.exports = Storytelleur = {}
-debug = require('debug') 'raconteur:postmaster'
+module.exports = Scribe = {}
+debug = require('debug') 'raconteur:scribe'
 
-___ = require('parkplace').scope Storytelleur
+___ = require('parkplace').scope Scribe
 
 ___.secret '_renderer', marked
 

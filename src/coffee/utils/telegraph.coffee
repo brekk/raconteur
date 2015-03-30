@@ -1,7 +1,7 @@
 _ = require 'lodash'
-debug = require('debug') 'raconteur:bundler'
-Templater = require './templater'
-Postmaster = require './postmaster'
+debug = require('debug') 'raconteur:telegraph'
+crier = require './crier'
+scribe = require './scribe'
 promise = require 'promised-io/promise'
 Deferred = promise.Deferred
 
@@ -33,20 +33,20 @@ createNewTemplate = (name, template, content, opts=null)->
                 console.log e.stack
         removeTemplate = ()->
             debug "... removing template: %s", name
-            Templater.remove name
+            crier.remove name
         addTemplate = ()->
             debug "... adding template: %s", name
-            Templater.add name, template, opts.sugar
+            crier.add name, template, opts.sugar
         createPost = ()->
             debug "... creating post"
-            Postmaster.readRawAsPromise content
+            scribe.readRawAsPromise content
         createTemplate = (data)->
             debug "... creating template"
             debug data
             modelData = {
                 model: data
             }
-            Templater.createAsPromise name, modelData
+            crier.createAsPromise name, modelData
         instructions = [
             addTemplate
             createPost

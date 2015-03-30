@@ -1,9 +1,9 @@
 assert = require 'assert'
 should = require 'should'
 _ = require 'lodash'
-Templateur = require '../lib/templater'
+Crier = require '../lib/crier'
 dust = require 'dustjs-linkedin'
-templateFixture = require './fixtures/templater.json'
+templateFixture = require './fixtures/crier.json'
 rant = require 'rantjs'
 chalk = require 'chalk'
 path = require 'path'
@@ -49,7 +49,7 @@ rantify = (model)->
                 callback test
         beforeEach reset
         afterEach reset
-        describe 'Templateur', ()->
+        describe 'Crier', ()->
             describe '.getSugarFiletype', ()->
                 it 'should be .sugar by default', ()->
                     $.getSugarFiletype().should.equal '.sugar'
@@ -230,4 +230,4 @@ rantify = (model)->
         console.log "Error during testing: ", e
         if e.stack?
             console.log e.stack
-)(Templateur)
+)(Crier)

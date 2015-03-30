@@ -2,8 +2,8 @@ assert = require 'assert'
 should = require 'should'
 _ = require 'lodash'
 cwd = process.cwd()
-Postmasteur = require cwd + '/lib/postmaster'
-fixteur = require cwd + '/test/fixtures/postmaster.json'
+scribe = require cwd + '/lib/scribe'
+fixteur = require cwd + '/test/fixtures/scribe.json'
 chalk = require 'chalk'
 path = require 'path'
 
@@ -13,9 +13,9 @@ path = require 'path'
         harness = (method)->
             if fixteur.tests[method]?
                 return fixteur.tests[method]
-            console.log chalk.red "No fixture for #{method} found, are you sure you added it to fixtures/postmaster.json file?"
+            console.log chalk.red "No fixture for #{method} found, are you sure you added it to fixtures/scribe.json file?"
             return null
-        describe 'Postmasteur', ()->
+        describe 'Scribe', ()->
 
             describe '.readFile', ()->
                 it 'should read a file and return a parsed object', (done)->
@@ -76,4 +76,4 @@ path = require 'path'
         if e.stack?
             console.warn e.stack
     
-)(Postmasteur)
+)(scribe)

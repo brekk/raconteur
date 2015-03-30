@@ -1,10 +1,10 @@
 "use strict"
 
 _ = require 'lodash'
-debug = require('debug') 'raconteur:retemplater2'
+debug = require('debug') 'raconteur:herald'
 spool = require './spool'
 
-templater = require './templater'
+crier = require './crier'
 wrapper = require './wrapper'
 promise = require 'promised-io/promise'
 Deferred = promise.Deferred
@@ -54,7 +54,7 @@ ___.constant 'convertFile', (templateName, input, mode, inflate, sugar, spaces)-
             Templateur.add("#{templateName}", #{escapedInput}, #{sugar});
             """
         else if mode is 'inline-convert'
-            templater.convertSugarToDust(input).then (output)->
+            Crier.convertSugarToDust(input).then (output)->
                 d.resolve """
                 Templateur.add("#{templateName}", #{JSON.stringify(output)});
                 """ 
@@ -103,14 +103,14 @@ ___.readable 'export', (opts={})->
                 return converted
         ).value()
 
-    originalTemplater = path.resolve __dirname, './templater.js'
+    originalCrier = path.resolve __dirname, './crier.js'
 
     wrapFile = (lastFile)->
         if lastFile?
             carrier += "\n" + lastFile
         # console.log "convertedfiles", convertedFiles, "<<<<", typeof convertedFiles
         post = carrier + "\n" + post
-        wrapper.wrapFileAsPromise originalTemplater, pre, post
+        wrapper.wrapFileAsPromise originalCrier, pre, post
 
     succeed = (done)->
         exportPromise.resolve done

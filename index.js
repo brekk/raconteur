@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 module.exports = {
-    postmaster: require('./lib/postmaster'),
+    telegraph: require('./lib/telegraph'),
+    scribe: require('./lib/scribe'),
     renderer: require('./lib/renderer'),
-    templater: require('./lib/templater'),
-    bundler: require('./lib/postbundler')
+    crier: require('./lib/crier'),
+    herald: require('./lib/herald')
 };

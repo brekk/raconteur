@@ -2,13 +2,13 @@ assert = require 'assert'
 should = require 'should'
 _ = require 'lodash'
 cwd = process.cwd()
-retemplater = require cwd + '/lib/retemplater'
-fixteur = require cwd + '/test/fixtures/retemplater.json'
+herald = require cwd + '/lib/herald'
+fixteur = require cwd + '/test/fixtures/herald.json'
 chalk = require 'chalk'
 path = require 'path'
 (()->
     "use strict"
-    $ = retemplater
+    $ = herald
     try
         harness = (method)->
             if fixteur.tests[method]?
@@ -16,14 +16,14 @@ path = require 'path'
                     return fixteur.tests[method]
                 return _.map fixteur.tests[method], (loc)->
                     return path.resolve __dirname, loc
-            console.log chalk.red "No fixture for #{method} found, are you sure you added it to fixtures/retemplater.json file?"
+            console.log chalk.red "No fixture for #{method} found, are you sure you added it to fixtures/herald.json file?"
             return null
 
         reset = (done)->
             $.files = {}
             return done()
 
-        describe "Retemplateur", ()->
+        describe "Herald", ()->
             describe ".add", ()->
                 it "should be able to add files to the internal spool", ()->
                     addTests = harness 'add'
@@ -57,4 +57,4 @@ path = require 'path'
         if e.stack?
             console.warn e.stack
     
-)(retemplater)
+)(herald)
