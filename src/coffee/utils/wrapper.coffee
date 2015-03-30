@@ -62,7 +62,7 @@ Wrapper =
             if _.isString stream
                 stream = fs.createReadStream stream, opts
             out = if endpipe? then endpipe else process.stdout
-            stream.pipe wrapStream prescript, postscript
+            stream.pipe wrapstream prescript, postscript
                   .pipe out
             return
         catch e

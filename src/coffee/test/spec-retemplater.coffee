@@ -2,24 +2,19 @@ assert = require 'assert'
 should = require 'should'
 _ = require 'lodash'
 cwd = process.cwd()
-Retemplater = require cwd + '/lib/retemplater'
+retemplater = require cwd + '/lib/retemplater'
 fixteur = require cwd + '/test/fixtures/retemplater.json'
 chalk = require 'chalk'
 path = require 'path'
 (()->
     "use strict"
-    $ = null
+    $ = retemplater
     try
         harness = (method)->
             if fixteur.tests[method]?
                 return fixteur.tests[method]
             console.log chalk.red "No fixture for #{method} found, are you sure you added it to fixtures/retemplater.json file?"
             return null
-        beforeEach ()->
-            $ = new Retemplater {
-                input: ' '
-                output: ' '
-            }
         describe "Retemplateur", ()->
             describe ".escapeTabs", ()->
                 it "should converted unescaped strings to tab-escaped strings", (done)->
@@ -31,6 +26,15 @@ path = require 'path'
                         transformed.should.equal item.output
                         finish()
 
+            describe '.convertFile', ()->
+                xit "should in (jit)-mode allow for the conversion of just-in-time files which are read at runtime", ()->
+                xit "should in (jit)-mode be able to inflate the templates with content", ()->
+                xit "should in (inline)-mode allow for the conversion of jade files to js templates", ()->
+                xit "should in (inline)-mode be able to inflate the templates with content", ()->
+                xit "should in (inline-convert)-mode allow for the conversion of sugar (jade & dust) files to js templates", ()->
+
+            describe 'export', ()->
+                xit "should be able to generate raw files which contain external templates", ()->
 
             # describe ".getPostScript", ()->
             # describe ".getPreScript", ()->
@@ -41,4 +45,4 @@ path = require 'path'
         if e.stack?
             console.warn e.stack
     
-)(Retemplater)
+)(retemplater)

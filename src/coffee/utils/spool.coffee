@@ -1,4 +1,4 @@
-'use strict'
+"use strict"
 
 _ = require 'lodash'
 promise = require 'promised-io/promise'
@@ -51,7 +51,7 @@ ___.guarded 'readFile', (input, opts={})->
             d.resolve read.toString()
     return d
 
-___.readable 'readFiles', ()->
+___.readable 'resolve', ()->
     self = @
     resolver = new Deferred()
     # map the files into an instruction set
@@ -76,5 +76,3 @@ ___.readable 'readFiles', ()->
 
     promise.seq(instructions).then resolve, reject
     return resolver
-
-    

@@ -39,6 +39,7 @@
     "ampersand-model": "~4.0.2",
     "body-parser": "~1.9.0",
     "chalk": "^0.5.1",
+    "cheerio": "~0.18.0",
     "coffee-script": "~1.8.0",
     "cp-r": "^0.1.2",
     "debug": "^2.1.1",
@@ -50,13 +51,12 @@
     "marked": "^0.3.2",
     "minimist": "^1.1.0",
     "mkdirp": "^0.5.0",
-    "parkplace": "0.0.9",
+    "parkplace": "0.0.10",
     "promised-io": "~0.3.4",
     "rantjs": "^0.9.1",
-    "slug": "~0.8.0",
-    "wrap-stream": "^2.0.0",
     "request": "~2.53.0",
-    "cheerio": "~0.18.0"
+    "slug": "~0.8.0",
+    "wrap-stream": "^2.0.0"
   },
   "devDependencies": {
     "browserify": "^5.11.2",
