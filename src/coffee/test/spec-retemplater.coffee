@@ -12,10 +12,25 @@ path = require 'path'
     try
         harness = (method)->
             if fixteur.tests[method]?
-                return fixteur.tests[method]
+                unless method is 'add'
+                    return fixteur.tests[method]
+                return _.map fixteur.tests[method], (loc)->
+                    return path.resolve __dirname, loc
             console.log chalk.red "No fixture for #{method} found, are you sure you added it to fixtures/retemplater.json file?"
             return null
+
+        reset = (done)->
+            $.files = {}
+            return done()
+
         describe "Retemplateur", ()->
+            describe ".add", ()->
+                it "should be able to add files to the internal spool", ()->
+                    addTests = harness 'add'
+                    out = $.add.apply $, addTests
+                    $.files.each (file, key)->
+                        _(addTests).contains(key).should.equal true
+
             describe ".escapeTabs", ()->
                 it "should converted unescaped strings to tab-escaped strings", (done)->
                     data = harness 'escapeTabs'
@@ -34,12 +49,9 @@ path = require 'path'
                 xit "should in (inline-convert)-mode allow for the conversion of sugar (jade & dust) files to js templates", ()->
 
             describe 'export', ()->
-                xit "should be able to generate raw files which contain external templates", ()->
+                it "should be able to generate raw files which contain external templates in inline-convert mode", ()->
 
-            # describe ".getPostScript", ()->
-            # describe ".getPreScript", ()->
-            # describe ".readFile", ()->
-            # describe ".exportFile", ()->
+
     catch e
         console.warn "Error during retemplating spec: ", e
         if e.stack?

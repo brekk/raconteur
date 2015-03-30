@@ -1,5 +1,9 @@
 {
     "tests": {
+        "add": [
+            "./sugar/tpl-post.sugar",
+            "./sugar/tpl-page.sugar"
+        ],
         "escapeTabs": [
             {
                 "tabs": 4,

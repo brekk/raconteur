@@ -14,6 +14,15 @@ module.exports = Retemplater = {}
 
 ___ = require('parkplace').scope Retemplater
 
+___.secret 'spool', spool
+
+___.secret 'files', {
+    get: ()->
+        return spool.files
+    set: (x)->
+        return spool._files = x
+}, true
+
 ___.readable 'add', ()->
     self = @
     spool.add.apply spool, arguments
