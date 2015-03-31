@@ -45,26 +45,43 @@ Templateur = {
     * @method add
     * @param {String} name - the name of the template to store
     * @param {String} template - the dust text to template
-    * @return Promise p
+    * @param {Boolean} sugar=false - convert from sugar first?
+    * @param {Function} callback - a callback
     ###
-    add: (name, templateString, sugar=false)->
-        d = postpone()
+    add: (name, templateString, sugar=false, callback)->
         addToDust = (template)->
             if !_.isString(name) or !_.isString(template)
-                d.reject new TypeError "Expected both name and template to be strings."
+                callback new TypeError "Expected both name and template to be strings."
                 return
             debug ".add: adding named template (%s) to dust"
             dust.loadSource dust.compile template, name
-            d.resolve true
+            callback null, true
             return
         if sugar? and sugar
             debug "converting from sugar first"
             @convertSugarToDust(templateString).then addToDust, (e)->
                 debug ".add: error during sugarToDust conversion: %s", e.toString()
-                d.reject e
+                callback e
                 return
-            return d
+            return
         addToDust templateString
+
+    ###*
+    * add a named template
+    * @method add
+    * @param {String} name - the name of the template to store
+    * @param {String} template - the dust text to template
+    * @param {Boolean} sugar=false - convert from sugar first?
+    * @return {Promise} addPromise
+    ###
+    addAsPromise: (name, templateString, sugar=false)->
+        d = postpone()
+        @add name, templateString, sugar, (error, response)->
+            if error?
+                d.reject error
+                return
+            d.resolve response
+            return
         return d
 
     # check for the existence of a key in the cache
@@ -74,28 +91,41 @@ Templateur = {
             return _.contains dustKeys, name
         return false
 
-    remove: (name)->
-        d = new Deferred()
-        (->
-            if _.isString name
-                if dust.cache[name]?
-                    delete dust.cache[name]
-                    debug ".remove: removed named template: %s", name
-                    d.resolve true
-                else
-                    debug ".remove: no named template: %s", name
-                    d.resolve true
+    remove: (name, cb)->
+        if _.isString name
+            if dust.cache[name]?
+                delete dust.cache[name]
+                debug ".remove: removed named template: %s", name
+                cb null, true
             else
-                d.reject new TypeError "Expected name to be a string."
-        )()
+                debug ".remove: no named template: %s", name
+                cb null, true
+            return
+        cb new TypeError "Expected name to be a string."
+        
+
+    removeAsPromise: (name)->
+        d = new Deferred()
+        @remove name, (error, success)->
+            if error?
+                d.reject error
+                return
+            d.resolve success
+            return 
         return d
 
-
-    # invoked with 3 arguments, will invoke callback with
-    # rendered text or an error (#outcome)
-    # invoked with 1 argument, will return a function which
-    # expects a data model and a callback, which when invoked,
-    # will return (#outcome)
+    ###*
+    * Creates a template or a function which renders a template
+    * When invoked with 3 arguments, it will invoke the callback with
+    * rendered text (#outcome) or an error
+    * invoked with 1 argument, will return a function which
+    * expects a data model and a callback, which when invoked,
+    * will return (#outcome) or an error
+    * @method create
+    * @param {String} name - name of cached template (added via self.add)
+    * @param {Object} [object] - the optional data object
+    * @param {Function} [cb] - the optional callback
+    ###
     create: (name, object, cb)->
         self = @
         unless name?
@@ -126,7 +156,7 @@ Templateur = {
     * 
     * @method createAsPromise
     * @param {String} name - name of cached template (added via self.add)
-    * @param {Object} object - the 
+    * @param {Object} [object] - the optional data object 
     ###
     createAsPromise: (name, object)->
         # our dust render wrapper
@@ -199,7 +229,7 @@ Templateur = {
     * @param {null|String} addAsTemplate - null or String
     * @param {Boolean|Object} inflate - boolean or object
     ###
-    loadFileAsPromise: (fileToLoad, addAsTemplate=null, inflate=false)->
+    loadFileAsPromise: (fileToLoad, addAsTemplate=null, inflate=false, useSugar=false)->
         self = @
         if _.isArray fileToLoad
             # because our main function always returns a promise
@@ -247,7 +277,7 @@ Templateur = {
             # our callback
             addNamedTemplate = (content)->
                 # register the template with the content
-                self.add(addAsTemplate, content).then ()->
+                self.addAsPromise(addAsTemplate, content, useSugar).then ()->
                     # if inflate is either true or an object
                     if inflate? and inflate
                         if !_.isObject inflate
@@ -267,7 +297,7 @@ Templateur = {
                     return
                 , bad
             # if it's a sugarfile, do a preconversion for it (jade > dust)
-            if self.getSugarFiletype() is path.extname fileToLoad
+            if useSugar or (self.getSugarFiletype() is path.extname fileToLoad)
                 self.convertSugarToDust(output).then addNamedTemplate, bad
             else
                 # otherwise, call our callback with the output

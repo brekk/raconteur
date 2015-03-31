@@ -5,15 +5,17 @@ Ever been frustrated by the need to separate the concerns of content creation (m
 
 Raconteur offers some loosely-opinionated tools to manage robust content and convert it to clean markup.
 
-### Tools
- 1. scribe / postmaster - _a tool for converting markdown and front-matter to a json-encoded html format._
+#### Tools
+ 1. scribe - _a tool for dead-simple content creation in markdown and modified json._
  2. renderer - _an extensible markdown parser (`marked` internally), used by the scribe._
- 3. crier / templater - _a wrapper around the dustjs-linkedin module which allows for "sugar" syntax._
- 4. herald / retemplater - _a way of automagically loading templates at or before runtime and re-writing the crier._
+ 3. crier - _a tool for expressive and easy template creation in jade and dust._
+ 4. herald - _a tool for creating a crier instance preloaded with templates._
 
-### Utilities
+#### Utilities
  1. telegraph - _a light-weight single-template implementation that binds the scribe and the crier together._
  2. telepath - _a more complex but more reusable implementation which binds the scribe and the crier together._
+
+## Tools
 
 ### Scribe
 
@@ -158,7 +160,7 @@ Please read the tests for a better understanding of all the possible options for
 
 ### Herald
 
-The Herald is essentially a wrapper for the Crier. It allows you to create a custom instance of the Crier with templates pre-loaded (they can either be loaded at runtime or pre-added to the output file), so the generated file already has access to the templates you want to use.
+The Herald is essentially a re-wrapper for the Crier. It allows you to create a custom instance of the Crier with templates pre-loaded (they can either be loaded at runtime or pre-added to the output file), so the generated file already has access to the templates you want to use.
 
 It's pretty straightforward to use, but the main configurable options are in the `herald.export` method.
 
@@ -189,6 +191,8 @@ Once that retemplater file has been run, you should have a custom version of the
     crier.has 'page.sugar' # prints true
     crier.has 'summary.sugar' # prints false
 
+## Utilities
 
+### Telegraph
 
-
+The Telegraph is a lightweight single-template-only utility which joins together the functionality of both the Crier and Scribe in a single function.

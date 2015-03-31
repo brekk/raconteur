@@ -44,7 +44,7 @@ rantify = (model)->
             args = [name, template]
             if options?.sugar? and options.sugar
                 args.push true
-            result = $.add.apply($, args)
+            result = $.addAsPromise.apply($, args)
             result.then ()->
                 callback test
         beforeEach reset
@@ -58,7 +58,7 @@ rantify = (model)->
                     newType = '.pants'
                     $.setSugarFiletype newType
                     $.getSugarFiletype().should.equal newType
-            describe '.add', ()->
+            describe '.addAsPromise', ()->
                 it "should add a new template to the dust.cache", (done)->
                     count = _.size fixture.templates
                     finish = _.after count, done
@@ -69,7 +69,7 @@ rantify = (model)->
                             if options.sugar
                                 finish()
                                 return
-                        $.add.apply($, args).then ()->
+                        $.addAsPromise.apply($, args).then ()->
                             {name, template, model, options} = test
                             dust.cache.should.have.property name
                             finish()
@@ -82,7 +82,7 @@ rantify = (model)->
                             {name, template, model, options} = out
                             dust.cache.should.have.property name
                             finish()
-            describe '.remove', ()->
+            describe '.removeAsPromise', ()->
                 it 'should remove an existing template from the dust.cache', (done)->
                     count = _.size fixture.templates
                     finish = _.after (count*2), done
@@ -91,7 +91,7 @@ rantify = (model)->
                             {name, template, model, options} = out
                             dust.cache.should.have.property name
                             finish()
-                            $.remove(test.name).then ()->
+                            $.removeAsPromise(test.name).then ()->
                                 finish()
             describe '.has', ()->
                 it "should prove that a template has been added to the dust.cache", ()->
