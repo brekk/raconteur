@@ -5,7 +5,7 @@ scribe = require './scribe'
 promise = require 'promised-io/promise'
 Deferred = promise.Deferred
 
-createNewTemplate = (name, template, content, opts=null)->
+telegraph = (name, template, content, opts=null)->
     # promise a value
     d = new Deferred()
     # smoke test
@@ -27,7 +27,7 @@ createNewTemplate = (name, template, content, opts=null)->
             opts = defaultOptions
         # deal with errors
         errorHandler = (e)->
-            debug "Error during createNewTemplate: %s", e.toString()
+            debug "Error during telegraph: %s", e.toString()
             d.reject e
             if e.stack?
                 console.log e.stack
@@ -64,4 +64,4 @@ createNewTemplate = (name, template, content, opts=null)->
         d.reject new Error expectation
     return d
 
-module.exports = createNewTemplate
+module.exports = telegraph

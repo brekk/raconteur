@@ -36,7 +36,7 @@ rantify = (model)->
                     template.options = {}
                 return template
             ).value()
-            $.setSugarFiletype '.sugar'
+            $.sugarFileType = '.sugar'
             dust.cache = {}
             done()
         customAdd = (test, callback)->
@@ -50,14 +50,14 @@ rantify = (model)->
         beforeEach reset
         afterEach reset
         describe 'Crier', ()->
-            describe '.getSugarFiletype', ()->
+            describe '.sugarFileType.get', ()->
                 it 'should be .sugar by default', ()->
-                    $.getSugarFiletype().should.equal '.sugar'
-            describe '.setSugarFiletype', ()->
+                    $.sugarFileType.should.equal '.sugar'
+            describe '.sugarFileType.set', ()->
                 it 'should allow for assignment of new sugarfile types', ()->
                     newType = '.pants'
-                    $.setSugarFiletype newType
-                    $.getSugarFiletype().should.equal newType
+                    $.sugarFileType = newType
+                    $.sugarFileType.should.equal newType
             describe '.addAsPromise', ()->
                 it "should add a new template to the dust.cache", (done)->
                     count = _.size fixture.templates
