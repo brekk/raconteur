@@ -16,9 +16,16 @@
                 "output": "\"article.post\\n  .content\\n\\t.drawn(role=\\\"drawn-content\\\")\\n\\t  img(src=\\\"{model.attributes.image}\\\")\\n\\t.written\\n\\t  header\\n\\t\\th1.title(role=\\\"title\\\")|{model.attributes.title}\\n\\t\\th2.subtitle(role=\\\"subtitle\\\")|{model.attributes.subtitle}\\n\\t\\tul.tags|{#model.attributes.tags}\\n\\t\\t  li.tag|{.}\\n\\t\\t{/model.attributes.tags}\\n\\t  .data(role=\\\"written-content\\\")|{model.content|s}\\n\\tfooter\\n\\t  .meta(data-timestamp=\\\"0\\\")\\n\\t\\t.time(role=\\\"timestamp\\\")|{model.attributes.timestamp}\\n\\t\\t.category(role=\\\"category\\\")|{model.attributes.category}\""
             }
         ],
-        "getPostScript": "",
-        "getPreScript": "",
-        "readFile": "",
-        "exportFile": ""
+        "convertFile": {
+            "jit": [
+                {
+                    "input": ["tpl-post.sugar", "./sugar/tpl-post.sugar", "jit", false],
+                    "output": "Templateur.loadFileAsPromise(\"./sugar/tpl-post.sugar\", \"tpl-post.sugar\", false);"
+                }, {
+                    "input": ["tpl-page.sugar", "./sugar/tpl-page.sugar", "jit", false],
+                    "output": "Templateur.loadFileAsPromise(\"./sugar/tpl-page.sugar\", \"tpl-page.sugar\", false);"
+                }
+            ]
+        }
     }
 }

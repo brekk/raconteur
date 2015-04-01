@@ -60,6 +60,8 @@ ___.constant 'convertFile', (templateName, input, mode, inflate, sugar, spaces)-
                 """ 
             , (e)->
                 d.reject e
+        else
+            d.reject "Expected mode to be one of ('jit', 'inline', or 'inline-convert')."
     )()
     return d
 

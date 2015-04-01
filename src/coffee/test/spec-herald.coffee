@@ -42,7 +42,21 @@ path = require 'path'
                         finish()
 
             describe '.convertFile', ()->
-                xit "should in (jit)-mode allow for the conversion of just-in-time files which are read at runtime", ()->
+                it "should in (jit)-mode allow for the conversion of just-in-time files which are read at runtime", (done)->
+                    harnessed = harness('convertFile')
+                    instructions = harnessed.jit
+                    finish = _.after instructions.length, done
+                    _(instructions).each (item)->
+                        args = item.input
+                        # console.log "output", item.output
+                        conversionPromise = $.convertFile.apply $, args
+                        happy = (c)->
+                            c.should.equal item.output
+                            finish()
+                        sad = (e)->
+                            e.should.not.be.ok
+                        conversionPromise.then happy, sad
+
                 xit "should in (jit)-mode be able to inflate the templates with content", ()->
                 xit "should in (inline)-mode allow for the conversion of jade files to js templates", ()->
                 xit "should in (inline)-mode be able to inflate the templates with content", ()->

@@ -233,57 +233,86 @@ ___.readable 'convertSugarToDust', (sugarContent, data, options)->
 ___.readable 'loadFileAsPromise', (fileToLoad, templateName=null, inflate=false, useSugar=false)->
     self = @
     # make yo'self a deferred
-    d = postpone()
-    # pull out a promise
-    fileReadOp = pfs.readFile fileToLoad, {
-        charset: 'utf8'
-    }
+    mainDeferred = postpone()
+
+    good = (outcome)->
+        mainDeferred.resolve outcome
+        return
     # right now we reuse this bad callback for all the parts of our possible logic chain
     bad = (err)->
-        d.reject err
-    # our first of many possible callbacks
-    good = (input)->
-        # pull it out from the buffer
-        output = input.toString()
-        # make sure to throw an error if given an empty file
-        if !output? or output.length is 0
-            d.reject new Error "File is empty."
-            return
-        # the second parameter (templateName), enables the more complicated
-        # output, so exit here if we can
-        if !templateName? or !_.isString templateName
-            bad new TypeError "Expected templateName to be a string."
-            return
-        # our callback
-        addNamedTemplate = (content)->
-            # register the template with the content
-            self.addAsPromise(templateName, content, useSugar).then ()->
-                # if inflate is either true or an object
-                if inflate? and inflate
-                    if !_.isObject inflate
-                        # give back a promise-returning function
-                        d.resolve self.createAsPromise templateName
-                        return
-                    else
-                        # give back a fully transformed template
-                        self.createAsPromise(templateName, inflate).then (resolved)->
-                            # ressy res
-                            d.resolve resolved
-                            return
-                        , bad
-                        return
-                # otherwise, just resolve as true
-                d.resolve true
-                return
-            , bad
-        # if it's a sugarfile, do a preconversion for it (jade > dust)
-        if useSugar or (self.sugarFileType is path.extname fileToLoad)
-            self.convertSugarToDust(output).then addNamedTemplate, bad
-        else
-            # otherwise, call our callback with the output
-            addNamedTemplate output
+        mainDeferred.reject err
         return
-    # read the file, then proceed with either callback
-    fileReadOp.then good, bad
+
+    # pull out a promise
+    readFile = ()->
+        d = postpone()
+        debug "reading file", fileToLoad
+        if !fileToLoad? or !_.isString fileToLoad
+            d.nay new TypeError "Expected fileToLoad to be a string."
+            return d
+        if !templateName? or !_.isString templateName
+            d.nay new TypeError "Expected templateName to be a string."
+            return d
+        succeed = (read)->
+            d.resolve read
+        fail = (e)->
+            d.reject e
+        pfs.readFile(fileToLoad, {
+            charset: 'utf8'
+        }).then succeed, fail
+        return d
+
+    eatFile = (input)->
+        debug "eating file", input
+        d = postpone()
+        if !input?
+            d.reject new Error "File is empty."
+        else
+            output = input.toString()
+            if !output? or output.length is 0
+                d.reject new Error "File is empty."
+                return d
+            d.resolve output
+        return d
+
+    convertSugarToDust = (input)->
+        debug "converting file", input
+        return self.convertSugarToDust(input)
+
+    addAsPromise = (content)->
+        debug "adding file as promise", content
+        return self.addAsPromise(templateName, content, useSugar)
+
+    inflateOrCreate = ()->
+        try
+            debug 'inflating or creating', inflate
+            d = postpone()
+            if inflate? and inflate
+                if !_.isObject inflate
+                    d.yay self.createAsPromise templateName
+                    return d
+                else
+                    self.createAsPromise(templateName, inflate).then (resolved)->
+                        d.yay resolved
+                        return
+                    , bad
+                    return d
+            d.yay true
+            return d
+        catch e
+            d.nay e
+
+    instructions = [
+        readFile
+        eatFile
+    ]
+
+    if useSugar or (self.sugarFileType is path.extname fileToLoad)
+        instructions.push convertSugarToDust
+
+    instructions.push addAsPromise
+    instructions.push inflateOrCreate
+
     # give back the promise
-    return d
+    promise.seq(instructions).then good, bad
+    return mainDeferred
