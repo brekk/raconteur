@@ -137,7 +137,13 @@ ___.readable 'create', (name, object, cb)->
         return templateMaker
     return templateMaker object, cb
 
-___.readable 'makeTemplate', (name)->
+###*
+* Make a template from a named template
+* @method makeTemplate
+* @param {String} name - the name of the cached template (added via self.add)
+* @return (Function) template - a generated template
+###
+___.guarded 'makeTemplate', (name)->
     unless @has name
         debug ".create: named template (%s) does not exist", name
         return false
@@ -146,9 +152,9 @@ ___.readable 'makeTemplate', (name)->
         if !callback? or !_.isFunction callback
             throw new TypeError "Expected a callback."
             # callback = ()->
-        results = dust.render name, data, callback
+        result = dust.render name, data, callback
         debug ".create(->): successfully rendered"
-        return results
+        return result
 
 ###*
 * The same thing as create, but utilizing the promise pattern
@@ -157,24 +163,21 @@ ___.readable 'makeTemplate', (name)->
 * @param {Object} [object] - the optional data object 
 ###
 ___.readable 'createAsPromise', (name, object)->
-    # our dust render wrapper
-    render = (data)->
+    render = @makeTemplate name
+    promisable = (obj)->
         d = postpone()
-        dust.render name, data, (e, out)->
-            if e
-                d.reject e
+        if obj? and _.isObject obj
+            debug "createAsPromise: rendering and returning promise"
+            render obj, (error, content)->
+                if error?
+                    d.reject error
+                    return
+                d.resolve content
                 return
-            debug: ".create(->): successfully rendered"
-            d.resolve out
-            return
-        return d
-    # if given both a name and an object, returns a promise of the resolved render
-    if object? and _.isObject object
-        debug "createAsPromise: rendering and returning promise"
-        return render object
-    # if given only a name, will return a function which returns said promise
-    debug "createAsPromise: returning render function"
-    return render
+            return d
+    if arguments.length is 1
+        return promisable
+    return promisable object
 
 ###*
 * Convert a sugar file
@@ -224,32 +227,11 @@ ___.readable 'convertSugarToDust', (sugarContent, data, options)->
 * Read a file or files and add them to the dust.cache via 
 * @method loadFileAsPromise
 * @param {String|Array} fileToLoad - String or Array of objects which have the format: {file, name, inflate}
-* @param {null|String} addAsTemplate - null or String
+* @param {null|String} templateName - null or String
 * @param {Boolean|Object} inflate - boolean or object
 ###
-___.readable 'loadFileAsPromise', (fileToLoad, addAsTemplate=null, inflate=false, useSugar=false)->
+___.readable 'loadFileAsPromise', (fileToLoad, templateName=null, inflate=false, useSugar=false)->
     self = @
-    if _.isArray fileToLoad
-        # because our main function always returns a promise
-        # we have to call promise.all to make sure that
-        return promise.all _(fileToLoad).map((item)->
-            # depending on what we've been given
-            unless item.file?
-                # this will get compacted
-                return null
-
-            args = [item.file]
-            # add to the arguments
-            if item.name?
-                args.push item.name
-                # if we have them
-                if item.inflate?
-                    args.push item.inflate
-            # call the arguments by function.apply
-            # the returned result will always be a promise
-            return self.loadFileAsPromise.apply self, args
-        ).compact().value()
-
     # make yo'self a deferred
     d = postpone()
     # pull out a promise
@@ -267,24 +249,24 @@ ___.readable 'loadFileAsPromise', (fileToLoad, addAsTemplate=null, inflate=false
         if !output? or output.length is 0
             d.reject new Error "File is empty."
             return
-        # the second parameter (addAsTemplate), enables the more complicated
+        # the second parameter (templateName), enables the more complicated
         # output, so exit here if we can
-        if !addAsTemplate? or !_.isString addAsTemplate
-            d.resolve output
+        if !templateName? or !_.isString templateName
+            bad new TypeError "Expected templateName to be a string."
             return
         # our callback
         addNamedTemplate = (content)->
             # register the template with the content
-            self.addAsPromise(addAsTemplate, content, useSugar).then ()->
+            self.addAsPromise(templateName, content, useSugar).then ()->
                 # if inflate is either true or an object
                 if inflate? and inflate
                     if !_.isObject inflate
                         # give back a promise-returning function
-                        d.resolve self.createAsPromise addAsTemplate
+                        d.resolve self.createAsPromise templateName
                         return
                     else
                         # give back a fully transformed template
-                        self.createAsPromise(addAsTemplate, inflate).then (resolved)->
+                        self.createAsPromise(templateName, inflate).then (resolved)->
                             # ressy res
                             d.resolve resolved
                             return

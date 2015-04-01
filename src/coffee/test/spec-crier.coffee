@@ -172,17 +172,20 @@ rantify = (model)->
                     sugarPromise.then resolve, reject
 
             describe '.loadFileAsPromise', ()->
-                it 'should read a file via promise when given only one parameter', (done)->
-                    loadFileOp = $.loadFileAsPromise path.normalize process.cwd() + '/' + fixture.files.parameters.one.path
-                    loadFileOp.should.be.ok
-                    loadFileOp.then.should.be.ok
-                    happy = (output)->
-                        output.should.be.ok
-                        output.should.be.a.String
-                        done()
-                    sad = (e)->
-                        throw e
-                    loadFileOp.then happy, sad
+                it 'should fail when given only one parameter', (done)->
+                    (
+                        fileToLoad = path.normalize process.cwd() + '/' + fixture.files.parameters.one.path
+                        loadFileOp = $.loadFileAsPromise fileToLoad
+                        loadFileOp.should.be.ok
+                        loadFileOp.then.should.be.ok
+                        happy = (output)->
+                            output.should.not.be.ok
+                            output.should.not.be.a.String
+                        sad = (e)->
+                            e.should.be.ok
+                            done()
+                        loadFileOp.then happy, sad
+                    ).should.throwError
                 it 'should read a file via promise and add it to the dust.cache when given two parameters', (done)->
                     data = fixture.files.parameters.two
                     pathToFile = path.normalize process.cwd() + '/' + data.path
