@@ -43,6 +43,7 @@ ___.constant 'escapeTabs', (input, spaces=4)->
 ___.constant 'convertFile', (templateName, input, mode, inflate, sugar, spaces)->
     self = @
     d = new Deferred()
+    inflate = JSON.stringify inflate
     (->
         if mode is 'jit'
             d.resolve """
@@ -54,7 +55,7 @@ ___.constant 'convertFile', (templateName, input, mode, inflate, sugar, spaces)-
             Templateur.add("#{templateName}", #{escapedInput}, #{sugar});
             """
         else if mode is 'inline-convert'
-            Crier.convertSugarToDust(input).then (output)->
+            crier.convertSugarToDust(input).then (output)->
                 d.resolve """
                 Templateur.add("#{templateName}", #{JSON.stringify(output)});
                 """ 

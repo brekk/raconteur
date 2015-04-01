@@ -57,10 +57,49 @@ path = require 'path'
                             e.should.not.be.ok
                         conversionPromise.then happy, sad
 
-                xit "should in (jit)-mode be able to inflate the templates with content", ()->
-                xit "should in (inline)-mode allow for the conversion of jade files to js templates", ()->
-                xit "should in (inline)-mode be able to inflate the templates with content", ()->
-                xit "should in (inline-convert)-mode allow for the conversion of sugar (jade & dust) files to js templates", ()->
+                it "should in (jit)-mode be able to inflate the templates with content", (done)->
+                    harnessed = harness('convertFile')
+                    instructions = harnessed['jit-inflate']
+                    finish = _.after instructions.length, done
+                    _(instructions).each (item)->
+                        args = item.input
+                        # console.log "output", item.output
+                        conversionPromise = $.convertFile.apply $, args
+                        happy = (c)->
+                            c.should.equal item.output
+                            finish()
+                        sad = (e)->
+                            e.should.not.be.ok
+                        conversionPromise.then happy, sad
+
+                it "should in (inline)-mode allow for the conversion of jade files to js templates", (done)->
+                    harnessed = harness('convertFile')
+                    instructions = harnessed['inline']
+                    finish = _.after instructions.length, done
+                    _(instructions).each (item)->
+                        args = item.input
+                        # console.log "output", item.output
+                        conversionPromise = $.convertFile.apply $, args
+                        happy = (c)->
+                            JSON.stringify(c).should.equal JSON.stringify item.output
+                            finish()
+                        sad = (e)->
+                            e.should.not.be.ok
+                        conversionPromise.then happy, sad
+                it "should in (inline-convert)-mode allow for the conversion of sugar (jade & dust) files to js templates", (done)->
+                    harnessed = harness('convertFile')
+                    instructions = harnessed['inline-convert']
+                    finish = _.after instructions.length, done
+                    _(instructions).each (item)->
+                        args = item.input
+                        # console.log "output", item.output
+                        conversionPromise = $.convertFile.apply $, args
+                        happy = (c)->
+                            JSON.stringify(c).should.equal JSON.stringify item.output
+                            finish()
+                        sad = (e)->
+                            e.should.not.be.ok
+                        conversionPromise.then happy, sad
 
             describe 'export', ()->
                 it "should be able to generate raw files which contain external templates in inline-convert mode", ()->
