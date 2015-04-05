@@ -1,6 +1,6 @@
 {
   "name": "raconteur",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A toolset for converting markdown and json to blog posts.",
   "main": "index.js",
   "scripts": {
