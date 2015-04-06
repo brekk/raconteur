@@ -1,7 +1,7 @@
 _ = require 'lodash'
 debug = require('debug') 'raconteur:telegraph'
-crier = require './crier'
-scribe = require './scribe'
+crier = require 'raconteur-crier'
+scribe = require 'raconteur-scribe'
 promise = require 'promised-io/promise'
 Deferred = promise.Deferred
 
