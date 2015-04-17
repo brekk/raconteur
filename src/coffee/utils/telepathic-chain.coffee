@@ -1,5 +1,4 @@
 _ = require 'lodash'
-debug = require('debug') 'raconteur:telegraphic-chain'
 crier = require('raconteur-crier').crier
 scribe = require 'raconteur-scribe'
 promise = require 'promised-io/promise'
@@ -54,10 +53,6 @@ InstructionCollection = AmpCollection.extend {
 ChainState = AmpState.extend {
     idAttribute: 'name'
     props: {
-        # our template list, which contains templates
-        templates: ['object', true]
-        # our post list, which contains posts
-        posts: ['object', true]
         name: {
             type: 'string'
             required: true
@@ -165,6 +160,7 @@ module.exports = (stateName)->
 
     ___.readable 'sugar', ()->
         @_sugar = true
+        return @
 
     # we may need to generate random ids, this does that
     ___.guarded 'generateId', (content=null)->
@@ -173,10 +169,10 @@ module.exports = (stateName)->
         return _.uniqueId content
 
     # set the mode as promise
-    ___.readable "promise", {
-        set: (value)->
-            @_mode.promise = !!value
-    }, true
+    ___.readable "promise", ()->
+        @_mode.promise = true
+        return @
+
 
     # when raw is true, file is false
     setRawOrFileMode = (value)->
@@ -298,7 +294,6 @@ module.exports = (stateName)->
 
     ___.guarded 'fulfillInstructionsByLookup', (set)->
         self = TelepathicChain
-        debug chalk.green set.startOp
         sequentAll = self.hashPromiseArray _.map set.instructions, (struct)->
             return _.wrap struct.single, (fn)->
                 subRoute = new Deferred()
@@ -322,7 +317,6 @@ module.exports = (stateName)->
                         debug 'shizza', e
                         d.reject e
                         return
-                    debug out
                     d.resolve out
                 return d
             return promise.all groupedTemplatePromises
@@ -335,10 +329,15 @@ module.exports = (stateName)->
             d.nay e
             return
         promise.seq(state.commands).then ()->
-            # debug chalk.red "templates"
-            # debug self._templates
-            # debug chalk.green "posts"
-            # debug self._posts
+            debug chalk.red "templates"
+            debug self._templates
+            debug chalk.green "posts"
+            debug self._posts
+            noPosts = !(_.size(self._posts) > 0)
+            noTemplates = !(_.size(self._templates) > 0)
+            if noPosts or noTemplates
+                bad new Error "Expected to be invoked with at least one post and one template."
+                return
             copy = []
             groupByKind = (collection, iter, idx)->
                 copy.push iter
@@ -394,10 +393,12 @@ module.exports = (stateName)->
     ___.readable 'ready', (cb)->
         self = @
         d = new Deferred()
-        return self.execute().then (hooray)->
+        good = (hooray)->
             cb null, hooray
-        , (e)->
+        bad = (e)->
             cb e
-        
+        if !self._mode.promise
+            return self.execute().then good, bad
+        return self.execute()
 
     return TelepathicChain
