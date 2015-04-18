@@ -1,0 +1,16 @@
+article.post
+    .content
+        .drawn(role="drawn-content")
+            img(src="{model.attributes.image}")
+        .written
+            header
+                h1.title(role="title")|{model.attributes.title}
+                h2.subtitle(role="subtitle")|{model.attributes.subtitle}
+                ul.tags|{#model.attributes.tags}
+                    li.tag|{.}
+                    {/model.attributes.tags}
+            .data(role="written-content")|{model.content|s}
+        footer
+            .meta(data-timestamp="0")
+                .time(role="timestamp")|{model.attributes.timestamp}
+                .category(role="category")|{model.attributes.category}

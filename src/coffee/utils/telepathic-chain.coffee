@@ -196,13 +196,15 @@ module.exports = (stateName)->
 
     # set the mode to raw (!file)
     ___.readable "raw", ()->
-        @fileMode = false
-        return @
+        self = TelepathicChain
+        self.fileMode = false
+        return self
 
     # set the mode to file (!raw)
     ___.readable "file", ()->
-        @fileMode = true
-        return @
+        self = TelepathicChain
+        self.fileMode = true
+        return self
 
     # add functions to the instruction chain
     ___.guarded "addInstruction", (name, fn, kind)->
@@ -211,16 +213,14 @@ module.exports = (stateName)->
         # state.counter += 1
         return state.addInstruction.call state, name, fn, kind
 
-    ___.readable 'lookup', (locAndId)->
+    ___.readable 'lookup', _.memoize (location, id)->
         self = @
-        d = new Deferred()
-        if locAndId?.location? and locAndId?.id?
-            out = self[locAndId.location][locAndId.id]
-            return out
+        out = self[location][id]
+        return out
 
     # add a post to the 
     ___.readable 'post', (post, options)->
-        self = @
+        self = TelepathicChain
         debug "adding instruction to add post"
         self.addInstruction "post", ()->
             debug chalk.green "reading post"
@@ -248,7 +248,7 @@ module.exports = (stateName)->
         return self
 
     ___.readable 'template', (name, templateString, options={})->
-        self = @
+        self = TelepathicChain
         debug "adding instruction to add template"
         self.addInstruction "template", ()->
             debug chalk.green "reading template"
@@ -270,7 +270,7 @@ module.exports = (stateName)->
                 debug "template:error", error
                 d.reject error
                 return
-            method(name, templateString, settings.inflate, settings.sugar).then success, fail
+            method(templateString, name, settings.inflate, settings.sugar).then success, fail
             return d
         return self
 
@@ -298,29 +298,30 @@ module.exports = (stateName)->
             return _.wrap struct.single, (fn)->
                 subRoute = new Deferred()
                 fn().then (out)->
-                    out.resolved = self.lookup out
+                    out.resolved = self.lookup out.location, out.id
                     subRoute.resolve out
                 , (e)->
                     subRoute.reject e
                 return subRoute
         return sequentAll
 
-    ___.guarded 'groupByLocation', (item)->
-        grouped = _(item).toArray().groupBy('location').value()
-        postResolverMap = _.map grouped._posts, (post)->
-            post = post.resolved
-            groupedTemplatePromises = _.map grouped._templates, (tpl)->
+    ___.guarded 'resolvePostsAndTemplates', _.memoize (posts, templates)->
+        self = TelepathicChain
+        return _.map posts, (postContent)->
+            groupedTemplatePromises = _.map templates, (tplContent)->
                 d = new Deferred()
-                tpl = tpl.resolved
-                tpl post, (e, out)->
+                tplContent.resolved postContent.resolved, (e, out)->
                     if e?
-                        debug 'shizza', e
                         d.reject e
                         return
                     d.resolve out
                 return d
             return promise.all groupedTemplatePromises
-        return postResolverMap
+
+    ___.guarded 'groupByLocation', (item)->
+        self = TelepathicChain
+        grouped = _(item).toArray().groupBy('location').value()
+        self.resolvePostsAndTemplates grouped._posts, grouped._templates
 
     ___.guarded "execute", ()->
         self = TelepathicChain

@@ -1,8 +1,8 @@
 {
   "name": "raconteur",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A toolset for converting markdown and json to blog posts.",
-  "main": "index.js",
+  "main": "raconteur.js",
   "scripts": {
     "build": "npm run clean && npm run create && npm run convert",
     "clean": "npm run clean-build && npm run clean-public",
