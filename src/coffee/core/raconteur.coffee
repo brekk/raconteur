@@ -5,8 +5,9 @@ telegraph = require './telegraph'
 telepath = require './telepath'
 
 module.exports = {
-    markdown: scribe
-    markup: crier
+    scribe: scribe
+    crier: crier.crier
+    herald: crier.herald
     telegraph: telegraph
     telepath: telepath
 }

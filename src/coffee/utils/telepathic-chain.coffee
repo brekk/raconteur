@@ -107,10 +107,6 @@ ChainState = AmpState.extend {
         return @
 }
 
-sluggable = require('slug')
-slug = (str)->
-    return sluggable str.toLowerCase()
-
 module.exports = (stateName)->
     "use strict"
     scopeThis = @
