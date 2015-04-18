@@ -3,7 +3,6 @@ should = require 'should'
 _ = require 'lodash'
 cwd = process.cwd()
 telepath = require cwd + '/lib/telepath'
-chalk = require 'chalk'
 path = require 'path'
 
 (($)->
