@@ -1,6 +1,6 @@
 {
   "name": "raconteur",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A toolset for converting markdown and json to blog posts.",
   "main": "raconteur.js",
   "scripts": {
@@ -42,6 +42,8 @@
     "debug": "^2.1.3",
     "lodash": "^3.7.0",
     "parkplace": "^0.1.0",
+    "raconteur-crier": "0.0.1",
+    "raconteur-scribe": "0.0.1",
     "slugger": "^1.0.0",
     "wrap-stream": "^2.0.0"
   },
