@@ -195,4 +195,77 @@ Once that retemplater file has been run, you should have a custom version of the
 
 ### Telegraph
 
-The Telegraph is a lightweight single-template-only utility which joins together the functionality of both the Crier and Scribe in a single function.
+The Telegraph is a lightweight, single-template-only utility which joins together the functionality of both the Crier and Scribe in a single function which returns a promise.
+
+    telegraph = require('raconteur').telegraph
+    postLocation = "./posts/somePost"
+    fs.readFile postLocation, {encoding: 'utf8'}, (rawPost)->
+        telegraphOperation = telegraph('post.html', '<div>{model.content|s}</div>', rawPost)
+        succeed = (content)->
+            console.log "WE HAVE OUR CONTENT", CONTENT
+        fail = (e)->
+            console.log "WE ARE FAILURES", e
+        telegraphOperation.then succeed, fail
+
+
+### Telepath
+
+The Telepath is a more fully featured object which joins together the functionality of the Crier and the Scribe with a convenient chainable interface.
+
+    telepath = require('raconteur').telepath
+    telepath.chain()
+            .sugar() # enables sugar syntax
+            .promise() # switches ready() from expecting a callback to returning a promise
+            .template("post.sugar", "./templates/tpl-post.sugar")
+            .post("./posts/test.md")
+            .post("./posts/other-test.md")
+            .post("./posts/shut-up.md")
+            .ready().then (posts)->
+                console.log posts[0] # prints test.md x tpl-post.sugar
+                console.log posts[1] # prints other-test.md x tpl-post.sugar
+                console.log posts[2] # prints shut-up.md x tpl-post.sugar
+            , (e)->
+                console.log "there was an error!", e
+
+You can also give a post first followed by multiple templates:
+
+    telepath.chain()
+            .sugar()
+            .post(locFix "/posts/test.md")
+            .template("post.sugar", locFix "/templates/tpl-post.sugar")
+            .template("post-summary.sugar", locFix "/templates/tpl-post-summary.sugar")
+            .template("post-hero.sugar", locFix "/templates/tpl-post-hero.sugar")
+            .ready (e, out)->
+                console.log out.length # prints 3
+                ###
+                out[0] = test.md x post.sugar
+                out[1] = test.md x post-summary.sugar
+                out[2] = test.md x post-hero.sugar
+                ###
+
+You can also make multiple template and post declarations:
+
+    telepath.chain()
+            .sugar()
+            .template("post.sugar", "./templates/tpl-post.sugar")
+            .post("./posts/test.md")
+            .post("./posts/other-test.md")
+            .post("./posts/shut-up.md")
+            .template("post-summary.sugar", "./templates/tpl-post-summary.sugar")
+            .post("./posts/test.md")
+            .post("./posts/other-test.md")
+            .template("post-hero.sugar", "./templates/tpl-post-hero.sugar")
+            .post("./posts/other-test.md")
+            .post("./posts/shut-up.md")
+            .ready (e, out)->
+                console.log e == null # prints true
+                console.log out.length # prints 7
+                ###
+                    out[0] = post.sugar x test.md
+                    out[1] = post.sugar x other-test.md
+                    out[2] = post.sugar x shut-up.md
+                    out[3] = post-summary.sugar x test.md
+                    out[4] = post-summary.sugar x other-test.md
+                    out[5] = post-hero.sugar x other-test.md
+                    out[6] = post-hero.sugar x shut-up.md
+                ###
