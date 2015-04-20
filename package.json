@@ -1,6 +1,6 @@
 {
   "name": "raconteur",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A toolset for converting markdown and json to blog posts.",
   "main": "raconteur.js",
   "scripts": {
@@ -10,8 +10,7 @@
     "clean-public": "rm -rf ./public",
     "create": "npm run create-lib",
     "create-lib": "(mkdir ./lib || true)",
-    "convert": "npm run convert-bare && npm run convert-cli && npm run convert-test && npm run convert-core && npm run convert-utils",
-    "convert-bare": "./node_modules/.bin/coffee --bare --compile --output ./lib/ src/coffee/bare",
+    "convert": "npm run convert-cli && npm run convert-test && npm run convert-core && npm run convert-utils",
     "convert-cli": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/cli",
     "convert-test": "./node_modules/.bin/coffee --compile --output ./test/ src/coffee/test",
     "convert-utils": "./node_modules/.bin/coffee --compile --output ./lib/ src/coffee/utils",
@@ -45,11 +44,13 @@
     "raconteur-crier": "^0.0.2",
     "raconteur-scribe": "^0.0.2",
     "slugger": "^1.0.0",
-    "wrap-stream": "^2.0.0"
+    "wrap-stream": "^2.0.0",
+    "coffee-script": "~1.9.2"
   },
   "devDependencies": {
     "assert": "^1.3.0",
     "mocha": "^2.2.4",
-    "should": "^6.0.1"
+    "should": "^6.0.1",
+    "chalk": "~1.0.0"
   }
 }
