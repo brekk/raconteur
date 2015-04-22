@@ -8,6 +8,7 @@ AmpCollection = require 'ampersand-collection'
 chalk = require 'chalk'
 slugger = require 'slugger'
 debug = require('debug') 'raconteur:telepathic-chain'
+path = require 'path'
 
 postpone = ()->
     d = new Deferred()
@@ -123,6 +124,8 @@ module.exports = (stateName)->
         get: ()->
             return state.getId()
     }, true
+
+    ___.guarded '__chain__', 'TELEPATH'
 
     # state object
     ___.guarded "_mode", {
@@ -243,9 +246,13 @@ module.exports = (stateName)->
             return d
         return self
 
+    ___.guarded 'resolveFileName', (name)->
+        return path.basename name
+
     ___.readable 'template', (name, templateString, options={})->
         self = TelepathicChain
         debug "adding instruction to add template"
+        originalArguments = _.toArray arguments
         self.addInstruction "template", ()->
             debug chalk.green "reading template"
             settings = _.extend self._mode, options
@@ -253,9 +260,14 @@ module.exports = (stateName)->
             method = crier.loadRawAsPromise
             if self.fileMode
                 method = crier.loadFileAsPromise
-            templateId = self.generateId()
+                # if we had only two arguments, pull the name from the filename
+                if (originalArguments.length is 2) and _.isString(name) and _.isObject(templateString)
+                    options = templateString
+                    templateString = name
+                    filename = self.resolveFileName name
+                    name = filename
             success = (content)->
-                debug "template:success"
+                debug "template:success %s", name
                 self._templates[name] = content
                 d.resolve {
                     location: '_templates'
@@ -326,10 +338,8 @@ module.exports = (stateName)->
             d.nay e
             return
         promise.seq(state.commands).then ()->
-            debug chalk.red "templates"
-            debug self._templates
-            debug chalk.green "posts"
-            debug self._posts
+            debug "templates %s", _.size self._templates
+            debug "posts %s", _.size self._posts
             noPosts = !(_.size(self._posts) > 0)
             noTemplates = !(_.size(self._templates) > 0)
             if noPosts or noTemplates
@@ -391,8 +401,10 @@ module.exports = (stateName)->
         self = @
         d = new Deferred()
         good = (hooray)->
+            debug "ready:good", hooray
             cb null, hooray
         bad = (e)->
+            debug "ready:bad", e
             cb e
         if !self._mode.promise
             return self.execute().then good, bad

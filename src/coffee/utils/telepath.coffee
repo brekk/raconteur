@@ -9,4 +9,5 @@ module.exports = Telepath = {}
 ___ = require("parkplace").scope Telepath
 
 ___.readable 'chain', ()->
+    debug 'creating new chain'
     return new chain()
