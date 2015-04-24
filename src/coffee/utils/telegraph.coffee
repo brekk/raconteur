@@ -9,6 +9,7 @@ telegraph = (name, template, post, opts)->
         sugar: false
         file: false
         raw: true
+        yaml: false
     }, opts
     opts.promise = true
     if opts.raw? and opts.raw
@@ -23,6 +24,8 @@ telegraph = (name, template, post, opts)->
         chain.sugar()
     if opts.promise
         chain.promise()
+    if opts.yaml
+        chain.yaml()
     conversionOp = chain.post post
                         .template name, template
     d = new Deferred()

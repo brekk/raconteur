@@ -4,6 +4,7 @@ _ = require 'lodash'
 cwd = process.cwd()
 telepath = require cwd + '/lib/telepath'
 path = require 'path'
+chalk = require 'chalk'
 
 (($)->
     "use strict"
@@ -15,6 +16,9 @@ path = require 'path'
                 describe "a basic chain", ()->
                     it "should have all of the methods available to the chain object", ()->
                         $.chain().should.have.properties 'sugar', 'raw', 'file', 'lookup', 'post', 'template', 'ready'
+                    it "should generate chains via a factory function", ()->
+                        chain1 = $.chain()
+                        $.chain().should.not.equal chain1
                 describe ".sugar()", ()->
                     it "should set the sugar state to true", ()->
                         chain = $.chain()
@@ -61,8 +65,32 @@ path = require 'path'
                             e.should.be.ok
                             arguments.length.should.equal 1
                             done()
+                    it "should should convert yaml successfully", (done)->
+                        finish = _.after 2, done
+
+                        $.chain()
+                         .sugar()
+                         .promise()
+                         .json()
+                         .template("post.sugar", locFix "/templates/tpl-post.sugar")
+                         .post(locFix "/posts/yaml-test.md", {yaml: true})
+                         .ready().then (out)->
+                                out.should.be.ok
+                                out.length.should.equal 1
+                                finish()
+
+                        $.chain()
+                         .sugar()
+                         .promise()
+                         .yaml()
+                         .template("post.sugar", locFix "/templates/tpl-post.sugar")
+                         .post(locFix "/posts/yaml-test.md")
+                         .ready().then (out)->
+                                out.should.be.ok
+                                out.length.should.equal 1
+                                finish()
+
                     it "should return the cross-product of all requested templates and posts", (done)->
-                        chain = 
                         finish = _.after 3, done
                         $.chain()
                          .sugar()
@@ -75,6 +103,7 @@ path = require 'path'
                                 out.should.be.ok
                                 out.length.should.equal 3
                                 finish()
+
                         $.chain()
                          .sugar()
                          .template("post.sugar", locFix "/templates/tpl-post.sugar")
@@ -90,6 +119,13 @@ path = require 'path'
                                 out.should.be.ok
                                 out.length.should.equal 6
                                 finish()
+
+                        good = (out)->
+                            out.should.be.ok
+                            out.length.should.equal 7
+                            finish()
+                        bad = (e)->
+                            console.log e, 'error'
                         $.chain()
                          .sugar()
                          .promise()
@@ -103,10 +139,7 @@ path = require 'path'
                          .template("post-hero.sugar", locFix "/templates/tpl-post-hero.sugar")
                          .post(locFix "/posts/other-test.md")
                          .post(locFix "/posts/shut-up.md")
-                         .ready().then (out)->
-                                out.should.be.ok
-                                out.length.should.equal 7
-                                finish()
+                         .ready().then good, bad
 
     catch e
         console.log "Error during Spec-telepath testing", e

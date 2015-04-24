@@ -133,6 +133,8 @@ module.exports = (stateName)->
         file: true # file is !raw
         promise: false
         sugar: false
+        yaml: false # yaml is !json
+        json: true # json = !yaml
     }
 
     ___.readable "instructions", {
@@ -184,14 +186,46 @@ module.exports = (stateName)->
             @_mode.file = false
         return @
 
+    # when json is true, yaml is false
+    setJSONMode = (value)->
+        isJSONMode = !!value
+        if isJSONMode
+            @_mode.yaml = false
+            @_mode.json = true
+        else
+            @_mode.yaml = true
+            @_mode.json = false
+        return @
+
+    getJSONMode = ()->
+        return !!@_mode.json
+
     getFileMode = ()->
         return !!@_mode.file
 
     # accessor & mutator
-    ___.readable "fileMode", {
+    ___.guarded "fileMode", {
         set: _.bind setRawOrFileMode, TelepathicChain
         get: _.bind getFileMode, TelepathicChain
     }, true
+
+    # accessor & mutator
+    ___.guarded "jsonMode", {
+        set: _.bind setJSONMode, TelepathicChain
+        get: _.bind getJSONMode, TelepathicChain
+    }, true
+
+    # set the mode to yaml (!json)
+    ___.readable "yaml", ()->
+        self = TelepathicChain
+        self.jsonMode = false
+        return self
+
+    # set the mode to json (!yaml)
+    ___.readable "json", ()->
+        self = TelepathicChain
+        self.jsonMode = true
+        return self
 
     # set the mode to raw (!file)
     ___.readable "raw", ()->
@@ -224,6 +258,9 @@ module.exports = (stateName)->
         self.addInstruction "post", ()->
             debug chalk.green "reading post"
             settings = _.extend self._mode, options
+            if settings.yaml
+                debug "...yaml"
+                scribe.yaml()
             method = scribe.readFileAsPromise
             if settings.raw? and settings.raw
                 method = scribe.readRawAsPromise
@@ -385,6 +422,7 @@ module.exports = (stateName)->
                 return collection
 
             reduced = self.instructions.reduce groupByKind, []
+            debug "reducing", reduced
             groupedPromises = _.map reduced, self.fulfillInstructionsByLookup
             promise.all(groupedPromises).then (outcomes)->
                 flattened = _(outcomes).map(self.groupByLocation).flatten().value()
