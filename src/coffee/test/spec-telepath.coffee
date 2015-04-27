@@ -11,6 +11,13 @@ chalk = require 'chalk'
     try
         locFix = (path)->
             return cwd + "/test/fixtures" + path
+        randomIndex = (array)->
+            if _.isArray array
+                return array[Math.round Math.random() * array.length - 1]
+        assertRandomUnequal = (array)->
+            x = randomIndex array
+            y = randomIndex array
+            x.should.not.equal y
         describe "Telepath", ()->
             describe ".chain()", ()->
                 describe "a basic chain", ()->
@@ -92,6 +99,7 @@ chalk = require 'chalk'
 
                     it "should return the cross-product of all requested templates and posts", (done)->
                         finish = _.after 3, done
+                        console.log chalk.red "# sugar.p.t.t.t (3)"
                         $.chain()
                          .sugar()
                          .post(locFix "/posts/test.md")
@@ -102,8 +110,10 @@ chalk = require 'chalk'
                                 e?.should.equal false
                                 out.should.be.ok
                                 out.length.should.equal 3
+                                # they shouldn't be identical
+                                assertRandomUnequal out
                                 finish()
-
+                        console.log chalk.red "# sugar.t.p.p.p.t.p.p.p (6)"
                         $.chain()
                          .sugar()
                          .template("post.sugar", locFix "/templates/tpl-post.sugar")
@@ -118,14 +128,19 @@ chalk = require 'chalk'
                                 e?.should.equal false
                                 out.should.be.ok
                                 out.length.should.equal 6
+                                # they shouldn't be identical
+                                assertRandomUnequal out
                                 finish()
 
                         good = (out)->
                             out.should.be.ok
                             out.length.should.equal 7
+                            # they shouldn't be identical
+                            assertRandomUnequal out
                             finish()
                         bad = (e)->
                             console.log e, 'error'
+                        console.log chalk.red "# sugar.sugar.promise.t.p.p.p.t.p.p.t.p.p (7)"
                         $.chain()
                          .sugar()
                          .promise()
@@ -140,6 +155,35 @@ chalk = require 'chalk'
                          .post(locFix "/posts/other-test.md")
                          .post(locFix "/posts/shut-up.md")
                          .ready().then good, bad
+                describe ".locals", ()->
+                    it "should allow raw data to be added to its .locals property, which can then be resolved within a post", (finish)->
+                        chain = $.chain()
+                        testName = "RANDOM" + Math.round Math.random() * 3e3
+                        chain.locals.testName = testName
+                        postContent = """
+                        "---\ntitle: some shia\npreview: something\n---some yaml-faced content"
+                        """
+                        templateContent = """
+                        article.post
+                            h1|{testName}
+                        """
+                        templateContent2 = """
+                        div|{posts|js}
+                        """
+                        console.log "<<<>>>S>S>>S", templateContent2
+                        chain.sugar()
+                             .promise()
+                             .yaml()
+                             .raw()
+                             .post(postContent)
+                             .template("post.sugar", templateContent)
+                             .template("second-post.sugar", templateContent2)
+                             .ready().then (out)->
+                                out.should.be.ok
+                                out[0].should.equal """<article class="post"><h1>#{testName}</h1></article>"""
+                                console.log ">>>", out
+                                out.length.should.equal 2
+                                finish()
 
     catch e
         console.log "Error during Spec-telepath testing", e

@@ -127,6 +127,17 @@ module.exports = (stateName)->
 
     ___.guarded '__chain__', 'TELEPATH'
 
+    ___.guarded "_locals", crier.locals
+
+    ___.readable 'locals', {
+        get: ()->
+            return @_locals
+        set: (obj)->
+            if !_.isObject obj
+                throw new TypeError "Expected .locals assignment to be an object."
+            @_locals = obj
+    }, true
+
     # state object
     ___.guarded "_mode", {
         raw: false # raw is !file
@@ -248,7 +259,9 @@ module.exports = (stateName)->
 
     ___.readable 'lookup', _.memoize (location, id)->
         self = @
+        console.log "whodat", location, id
         out = self[location][id]
+        console.log "outter spacce", out
         return out
 
     # add a post to the 
@@ -257,6 +270,7 @@ module.exports = (stateName)->
         debug "adding instruction to add post"
         self.addInstruction "post", ()->
             debug chalk.green "reading post"
+
             settings = _.extend self._mode, options
             if settings.yaml
                 debug "...yaml"
@@ -270,7 +284,8 @@ module.exports = (stateName)->
                 if !content? or content.length is 0
                     d.reject new Error "Content is empty, expected content to be a string with length > 0."
                 else
-                    idName = _.uniqueId slugger content.attributes.title, {smartTrim: 32}
+                    content = _.extend self.locals, content
+                    idName = slugger content.attributes.title, {smartTrim: 32}
                     self._posts[idName] = content
                     d.resolve {
                         location: '_posts'
@@ -350,22 +365,30 @@ module.exports = (stateName)->
                 return subRoute
         return sequentAll
 
-    ___.guarded 'resolvePostsAndTemplates', _.memoize (posts, templates)->
+    ___.guarded 'resolvePostsAndTemplates', (posts, templates)->
         self = TelepathicChain
         return _.map posts, (postContent)->
             groupedTemplatePromises = _.map templates, (tplContent)->
                 d = new Deferred()
-                tplContent.resolved postContent.resolved, (e, out)->
+                content = postContent.resolved
+                # console.log "pstContenst.resolvedstedst", postContent.resolved
+                localized = _.extend self.locals, postContent.resolved
+                # console.log "lclize.extension", localized
+                tplContent.resolved localized, (e, out)->
                     if e?
                         d.reject e
                         return
                     d.resolve out
                 return d
+            # console.log ">>>", groupedTemplatePromises
             return promise.all groupedTemplatePromises
 
+    # group by location fn, used during mapping in .execute 
     ___.guarded 'groupByLocation', (item)->
         self = TelepathicChain
+        debug "Grouping by location (pre):", item
         grouped = _(item).toArray().groupBy('location').value()
+        debug "Grouping by location (post):", grouped
         self.resolvePostsAndTemplates grouped._posts, grouped._templates
 
     ___.guarded "execute", ()->
@@ -377,11 +400,14 @@ module.exports = (stateName)->
         promise.seq(state.commands).then ()->
             debug "templates %s", _.size self._templates
             debug "posts %s", _.size self._posts
+            self.locals.posts = self._posts
+            self.locals.templates = self._templates
             noPosts = !(_.size(self._posts) > 0)
             noTemplates = !(_.size(self._templates) > 0)
             if noPosts or noTemplates
                 bad new Error "Expected to be invoked with at least one post and one template."
                 return
+            # we use the copy array as a clipboard for reverse iteration
             copy = []
             groupByKind = (collection, iter, idx)->
                 copy.push iter
@@ -425,7 +451,11 @@ module.exports = (stateName)->
             debug "reducing", reduced
             groupedPromises = _.map reduced, self.fulfillInstructionsByLookup
             promise.all(groupedPromises).then (outcomes)->
+                console.log "pre-flattened grouped-promises", outcomes, _.pluck outcomes[0], 'id'
                 flattened = _(outcomes).map(self.groupByLocation).flatten().value()
+                console.log "post-flattened grouped-promises", flattened
+                flipflopFlat = _(outcomes).flatten().map(self.groupByLocation).value()
+                console.log "flip-flop-flattened grouped-promises", flattened
                 promise.all(flattened).then (finalOut)->
                     d.yay _.flatten finalOut
                 , bad
