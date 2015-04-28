@@ -126,7 +126,7 @@ module.exports = (stateName)->
 
     ___.guarded '__chain__', 'TELEPATH'
 
-    ___.guarded "_locals", crier.locals
+    ___.guarded "_locals", {}
 
     ___.readable 'locals', {
         get: ()->
