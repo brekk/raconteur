@@ -9,6 +9,7 @@ chalk = require 'chalk'
 slugger = require 'slugger'
 debug = require('debug') 'raconteur:telepathic-chain'
 path = require 'path'
+chalk = require 'chalk'
 
 postpone = ()->
     d = new Deferred()
@@ -257,12 +258,12 @@ module.exports = (stateName)->
         # state.counter += 1
         return state.addInstruction.call state, name, fn, kind
 
-    ___.readable 'lookup', _.memoize (location, id)->
+    ___.readable 'lookup', (location, id)->
         self = @
-        console.log "whodat", location, id
         out = self[location][id]
-        console.log "outter spacce", out
         return out
+
+    yamlRegex = /^-{3}/
 
     # add a post to the 
     ___.readable 'post', (post, options)->
@@ -278,15 +279,23 @@ module.exports = (stateName)->
             method = scribe.readFileAsPromise
             if settings.raw? and settings.raw
                 method = scribe.readRawAsPromise
+                if yamlRegex.test post
+                    console.log "i know a yam face when I see one"
+                    scribe.yaml()
             d = new Deferred()
             success = (content)->
                 debug "...success"
-                if !content? or content.length is 0
-                    d.reject new Error "Content is empty, expected content to be a string with length > 0."
+                if !content?
+                    d.reject new Error "Content is empty, expected content to be an object."
                 else
-                    content = _.extend self.locals, content
                     idName = slugger content.attributes.title, {smartTrim: 32}
-                    self._posts[idName] = content
+                    if idName is ''
+                        console.log "HOOOOOOOOOOOOOOOOO", content
+                        d.reject new Error "idName is empty."
+                        return
+                    unless self._posts[idName]?
+                        console.log "INSERTING CONTENT", idName
+                        self._posts[idName] = content
                     d.resolve {
                         location: '_posts'
                         id: idName
@@ -355,58 +364,76 @@ module.exports = (stateName)->
     ___.guarded 'fulfillInstructionsByLookup', (set)->
         self = TelepathicChain
         sequentAll = self.hashPromiseArray _.map set.instructions, (struct)->
-            return _.wrap struct.single, (fn)->
-                subRoute = new Deferred()
-                fn().then (out)->
-                    out.resolved = self.lookup out.location, out.id
-                    subRoute.resolve out
-                , (e)->
-                    subRoute.reject e
+            subRoute = new Deferred()
+            good = (out)->
+                out.resolved = self.lookup out.location, out.id
+                subRoute.resolve out
+            bad = (e)->
+                subRoute.reject e
+            return _.wrap struct.fn, (fn)->
+                fn().then good, bad
                 return subRoute
         return sequentAll
 
-    ___.guarded 'resolvePostsAndTemplates', (posts, templates)->
+    ___.guarded 'resolvePostsAndTemplates', (posts, templates, group)->
         self = TelepathicChain
-        return _.map posts, (postContent)->
-            groupedTemplatePromises = _.map templates, (tplContent)->
-                d = new Deferred()
-                content = postContent.resolved
-                # console.log "pstContenst.resolvedstedst", postContent.resolved
-                localized = _.extend self.locals, postContent.resolved
-                # console.log "lclize.extension", localized
-                tplContent.resolved localized, (e, out)->
-                    if e?
-                        d.reject e
-                        return
-                    d.resolve out
-                return d
-            # console.log ">>>", groupedTemplatePromises
-            return promise.all groupedTemplatePromises
+        return _(posts).map((postContent, key)->
+            postIds = _.pluck(group._posts, 'id')
+            templateIds = _.pluck(group._templates, 'id')
+            console.log chalk.green.underline("post..."), key
+            console.log "       ", "postem", _(posts).keys().without(postIds).value() 
+            console.log "       ", "tempost", _(templates).keys().without(templateIds).value() 
+            if _.contains postIds, key
+                groupedTemplatePromises = _(templates).map((tplContent, tplKey)->
+                    try
+                        unless _.contains templateIds, tplKey
+                            return null
+                        d = new Deferred()
+                        content = postContent
+                        localized = content
+                        _.each self.locals, (loc, key)->
+                            if (key isnt '$len') and (key isnt '$idx') and (key isnt 'content') and (key isnt 'attributes')
+                                localized[key] = loc
+                        tplContent localized, (e, out)->
+                            if e?
+                                d.reject e
+                                return
+                            d.resolve out
+                        return d
+                    catch e
+                        console.log 'error EROROEOREOROEROEOR', e
+                        if e.stack?
+                            console.log e.stack
+                ).compact().value()
+                console.log chalk.green("propro"), _.size groupedTemplatePromises
+                return promise.all groupedTemplatePromises
+            return null
+        ).compact().value()
 
     # group by location fn, used during mapping in .execute 
     ___.guarded 'groupByLocation', (item)->
         self = TelepathicChain
-        debug "Grouping by location (pre):", item
         grouped = _(item).toArray().groupBy('location').value()
-        debug "Grouping by location (post):", grouped
-        self.resolvePostsAndTemplates grouped._posts, grouped._templates
+        output = self.resolvePostsAndTemplates self._posts, self._templates, grouped
+        return output
 
     ___.guarded "execute", ()->
         self = TelepathicChain
-        d = postpone()
+        executionDeferred = postpone()
         bad = (e)->
-            d.nay e
+            executionDeferred.nay e
             return
         promise.seq(state.commands).then ()->
-            debug "templates %s", _.size self._templates
-            debug "posts %s", _.size self._posts
-            self.locals.posts = self._posts
-            self.locals.templates = self._templates
+            console.log "templates", self._templates
+            console.log "posts", _.map (_.pluck self._posts, 'content'), (f)-> return f.substr(0,32)
             noPosts = !(_.size(self._posts) > 0)
             noTemplates = !(_.size(self._templates) > 0)
             if noPosts or noTemplates
                 bad new Error "Expected to be invoked with at least one post and one template."
                 return
+            if self.locals?
+                self.locals.posts = self._posts
+                self.locals.templates = self._templates
             # we use the copy array as a clipboard for reverse iteration
             copy = []
             groupByKind = (collection, iter, idx)->
@@ -431,7 +458,7 @@ module.exports = (stateName)->
                         pushToLastGroup = false
                         previousType = _.last previousGroup.operations
                         # arrows = chalk.red "<=>"
-                        # debug previousType, arrows, type
+                        # console.log previousType, arrows, type
                         if (type isnt previousType)
                             if (previousType is previousGroup.startOp)
                                 pushToLastGroup = true
@@ -448,22 +475,46 @@ module.exports = (stateName)->
                 return collection
 
             reduced = self.instructions.reduce groupByKind, []
-            debug "reducing", reduced
             groupedPromises = _.map reduced, self.fulfillInstructionsByLookup
             promise.all(groupedPromises).then (outcomes)->
-                console.log "pre-flattened grouped-promises", outcomes, _.pluck outcomes[0], 'id'
-                flattened = _(outcomes).map(self.groupByLocation).flatten().value()
-                console.log "post-flattened grouped-promises", flattened
-                flipflopFlat = _(outcomes).flatten().map(self.groupByLocation).value()
-                console.log "flip-flop-flattened grouped-promises", flattened
-                promise.all(flattened).then (finalOut)->
-                    d.yay _.flatten finalOut
+                mapped = _(outcomes).map(self.groupByLocation).value()
+                # this is the thing that breaks everything
+                ###
+                     _            _            _ _   _                                                         __ 
+                  __| | ___  __ _| | __      _(_) |_| |__     __ _ _ __     __ _ _ __ _ __ __ _ _   _    ___  / _|
+                 / _` |/ _ \/ _` | | \ \ /\ / / | __| '_ \   / _` | '_ \   / _` | '__| '__/ _` | | | |  / _ \| |_ 
+                | (_| |  __/ (_| | |  \ V  V /| | |_| | | | | (_| | | | | | (_| | |  | | | (_| | |_| | | (_) |  _|
+                 \__,_|\___|\__,_|_|   \_/\_/ |_|\__|_| |_|  \__,_|_| |_|  \__,_|_|  |_|  \__,_|\__, |  \___/|_|  
+                                                                                                |___/             
+                                           _               
+                 _ __  _ __ ___  _ __ ___ (_)___  ___  ___ 
+                | '_ \| '__/ _ \| '_ ` _ \| / __|/ _ \/ __|
+                | |_) | | | (_) | | | | | | \__ \  __/\__ \
+                | .__/|_|  \___/|_| |_| |_|_|___/\___||___/
+                |_|                                        
+                    
+                ###
+                mapped = _.first mapped # temporary pseudo-fix
+                promise.all(mapped).then (finalOut)->
+                    randomap = (f)->
+                        index = Math.round(Math.random() * f.length - 32)
+                        if _.isString f
+                            return f.substr(index,32)
+                        return _.map f, randomap
+                    # flat = _(finalOut).map((item)->
+                    #     if _.isArray(item) and _.size(item) is 1
+                    #         return item[0]
+                    # ).flatten().value()
+                    console.log "finalOut", _.map finalOut, randomap
+                    flat = _.flatten finalOut
+                    console.log "finalment", _.map flat, randomap
+                    executionDeferred.yay flat
                 , bad
                 return
             , bad
             return
         , bad
-        return d
+        return executionDeferred
 
     ___.readable 'ready', (cb)->
         self = @
