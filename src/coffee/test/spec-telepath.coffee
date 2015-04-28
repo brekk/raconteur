@@ -23,13 +23,10 @@ chalk = require 'chalk'
             x = randomIndex array
             y = randomIndex array
             if x isnt y
-                console.log x, ">>>X", array[x]?
-                console.log y, ">>>Y", array[y]?
                 array[x].should.not.equal array[y]
 
         assertNonUnique = (array)->
             if array.length > 1
-                console.log "unieuq", _.size _(array).unique().value()
                 (0 < _.size _(array).unique().value()).should.be.ok
         describe "Telepath", ()->
             describe ".chain()", ()->
@@ -121,7 +118,6 @@ chalk = require 'chalk'
                                     e?.should.equal false
                                     out.should.be.ok
                                     out.length.should.equal 3
-                                    console.log "post.tpl.tpl.tpl", _.map out, (f)-> return f.substr(32, 32)
                                     # they shouldn't be identical
                                     assertRandomUnequal out
                                     assertNonUnique out
@@ -140,7 +136,6 @@ chalk = require 'chalk'
                              .ready (e, out)->
                                     e?.should.equal false
                                     out.should.be.ok
-                                    console.log _.size(out), "tpl.post.post.post.tpl.post.post.post", _.map out, (f)-> return f.substr(32, 32)
                                     out.length.should.equal 6
                                     # they shouldn't be identical
                                     assertRandomUnequal out
@@ -151,7 +146,6 @@ chalk = require 'chalk'
                             good = (out)->
                                 out.should.be.ok
                                 out.length.should.equal 7
-                                console.log _.size(out), "TRIPLE SEVEN", _.map out, (f)-> return f.substr(32, 32)
                                 # they shouldn't be identical
                                 assertRandomUnequal out
                                 assertNonUnique out
@@ -179,14 +173,14 @@ chalk = require 'chalk'
                         testName = "RANDOM" + Math.round Math.random() * 3e3
                         chain.locals.testName = testName
                         postContent = """
-                        "---\ntitle: some shia\npreview: something\n---some yaml-faced content"
+                        ---\ntitle: some shia\npreview: something\n---some yaml-faced content
                         """
                         templateContent = """
                         article.post
                             h1|{testName}
                         """
                         templateContent2 = """
-                        div|{posts|js}
+                        div|{testName}
                         """
                         chain.sugar()
                              .promise()
@@ -198,10 +192,7 @@ chalk = require 'chalk'
                              .ready().then (out)->
                                 out.should.be.ok
                                 out[0].should.equal """<article class="post"><h1>#{testName}</h1></article>"""
-                                console.log ">>>", out
                                 out.length.should.equal 2
-                                assertRandomUnequal out
-                                assertNonUnique out
                                 finish()
 
     catch e

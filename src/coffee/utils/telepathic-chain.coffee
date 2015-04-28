@@ -5,11 +5,9 @@ promise = require 'promised-io/promise'
 Deferred = promise.Deferred
 AmpState = require 'ampersand-state'
 AmpCollection = require 'ampersand-collection'
-chalk = require 'chalk'
 slugger = require 'slugger'
 debug = require('debug') 'raconteur:telepathic-chain'
 path = require 'path'
-chalk = require 'chalk'
 
 postpone = ()->
     d = new Deferred()
@@ -270,7 +268,7 @@ module.exports = (stateName)->
         self = TelepathicChain
         debug "adding instruction to add post"
         self.addInstruction "post", ()->
-            debug chalk.green "reading post"
+            debug "reading post"
 
             settings = _.extend self._mode, options
             if settings.yaml
@@ -280,7 +278,7 @@ module.exports = (stateName)->
             if settings.raw? and settings.raw
                 method = scribe.readRawAsPromise
                 if yamlRegex.test post
-                    console.log "i know a yam face when I see one"
+                    debug "automatically switching to yaml mode"
                     scribe.yaml()
             d = new Deferred()
             success = (content)->
@@ -294,7 +292,6 @@ module.exports = (stateName)->
                         d.reject new Error "idName is empty."
                         return
                     unless self._posts[idName]?
-                        console.log "INSERTING CONTENT", idName
                         self._posts[idName] = content
                     d.resolve {
                         location: '_posts'
@@ -315,7 +312,7 @@ module.exports = (stateName)->
         debug "adding instruction to add template"
         originalArguments = _.toArray arguments
         self.addInstruction "template", ()->
-            debug chalk.green "reading template"
+            debug "reading template"
             settings = _.extend self._mode, options
             d = new Deferred()
             method = crier.loadRawAsPromise
@@ -375,14 +372,34 @@ module.exports = (stateName)->
                 return subRoute
         return sequentAll
 
+    ___.guarded 'addLocalsToContent', (content)->
+        self = TelepathicChain
+        localized = content
+        currentContent = content.content
+        stripPostsAndTemplatesFromObj = (obj)->
+            if obj.posts?
+                delete obj.posts
+            if obj.templates?
+                delete obj.templates
+        _.each self.locals, (loc, key)->
+            if (key isnt '$len') and (key isnt '$idx') and (key isnt 'content') and (key isnt 'attributes')
+                # if (key is 'posts') or (key is 'templates')
+                #     localized[key] = _(loc).map((item)->
+                #         if item.content is currentContent
+                #             console.log "nuke"
+                #             return null
+                #         item = stripPostsAndTemplatesFromObj item
+                #         return item
+                #     ).compact().value()
+                # else
+                localized[key] = loc
+        return localized
+
     ___.guarded 'resolvePostsAndTemplates', (posts, templates, group)->
         self = TelepathicChain
         return _(posts).map((postContent, key)->
             postIds = _.pluck(group._posts, 'id')
             templateIds = _.pluck(group._templates, 'id')
-            console.log chalk.green.underline("post..."), key
-            console.log "       ", "postem", _(posts).keys().without(postIds).value() 
-            console.log "       ", "tempost", _(templates).keys().without(templateIds).value() 
             if _.contains postIds, key
                 groupedTemplatePromises = _(templates).map((tplContent, tplKey)->
                     try
@@ -390,10 +407,7 @@ module.exports = (stateName)->
                             return null
                         d = new Deferred()
                         content = postContent
-                        localized = content
-                        _.each self.locals, (loc, key)->
-                            if (key isnt '$len') and (key isnt '$idx') and (key isnt 'content') and (key isnt 'attributes')
-                                localized[key] = loc
+                        localized = self.addLocalsToContent content
                         tplContent localized, (e, out)->
                             if e?
                                 d.reject e
@@ -401,11 +415,10 @@ module.exports = (stateName)->
                             d.resolve out
                         return d
                     catch e
-                        console.log 'error EROROEOREOROEROEOR', e
+                        d.reject e
                         if e.stack?
                             console.log e.stack
                 ).compact().value()
-                console.log chalk.green("propro"), _.size groupedTemplatePromises
                 return promise.all groupedTemplatePromises
             return null
         ).compact().value()
@@ -424,16 +437,16 @@ module.exports = (stateName)->
             executionDeferred.nay e
             return
         promise.seq(state.commands).then ()->
-            console.log "templates", self._templates
-            console.log "posts", _.map (_.pluck self._posts, 'content'), (f)-> return f.substr(0,32)
+            debug "templates", self._templates
+            debug "posts", _.map (_.pluck self._posts, 'content'), (f)-> return f.substr(0,32)
             noPosts = !(_.size(self._posts) > 0)
             noTemplates = !(_.size(self._templates) > 0)
             if noPosts or noTemplates
                 bad new Error "Expected to be invoked with at least one post and one template."
                 return
-            if self.locals?
-                self.locals.posts = self._posts
-                self.locals.templates = self._templates
+            # if self.locals?
+            #     self.locals.posts = self._posts
+            #     self.locals.templates = self._templates
             # we use the copy array as a clipboard for reverse iteration
             copy = []
             groupByKind = (collection, iter, idx)->
@@ -477,40 +490,15 @@ module.exports = (stateName)->
             reduced = self.instructions.reduce groupByKind, []
             groupedPromises = _.map reduced, self.fulfillInstructionsByLookup
             promise.all(groupedPromises).then (outcomes)->
-                mapped = _(outcomes).map(self.groupByLocation).value()
-                # this is the thing that breaks everything
-                ###
-                     _            _            _ _   _                                                         __ 
-                  __| | ___  __ _| | __      _(_) |_| |__     __ _ _ __     __ _ _ __ _ __ __ _ _   _    ___  / _|
-                 / _` |/ _ \/ _` | | \ \ /\ / / | __| '_ \   / _` | '_ \   / _` | '__| '__/ _` | | | |  / _ \| |_ 
-                | (_| |  __/ (_| | |  \ V  V /| | |_| | | | | (_| | | | | | (_| | |  | | | (_| | |_| | | (_) |  _|
-                 \__,_|\___|\__,_|_|   \_/\_/ |_|\__|_| |_|  \__,_|_| |_|  \__,_|_|  |_|  \__,_|\__, |  \___/|_|  
-                                                                                                |___/             
-                                           _               
-                 _ __  _ __ ___  _ __ ___ (_)___  ___  ___ 
-                | '_ \| '__/ _ \| '_ ` _ \| / __|/ _ \/ __|
-                | |_) | | | (_) | | | | | | \__ \  __/\__ \
-                | .__/|_|  \___/|_| |_| |_|_|___/\___||___/
-                |_|                                        
-                    
-                ###
-                mapped = _.first mapped # temporary pseudo-fix
-                promise.all(mapped).then (finalOut)->
-                    randomap = (f)->
-                        index = Math.round(Math.random() * f.length - 32)
-                        if _.isString f
-                            return f.substr(index,32)
-                        return _.map f, randomap
-                    # flat = _(finalOut).map((item)->
-                    #     if _.isArray(item) and _.size(item) is 1
-                    #         return item[0]
-                    # ).flatten().value()
-                    console.log "finalOut", _.map finalOut, randomap
-                    flat = _.flatten finalOut
-                    console.log "finalment", _.map flat, randomap
-                    executionDeferred.yay flat
-                , bad
-                return
+                finalOutcomes = _(outcomes).map(self.groupByLocation).map((mapped)->
+                    return promise.all(mapped)
+                ).value()
+                resolve = (out)->
+                    executionDeferred.resolve _.flatten _.flatten out
+                if finalOutcomes.length is 1
+                    finalOutcomes[0].then resolve, bad
+                else
+                    promise.all(finalOutcomes).then resolve, bad
             , bad
             return
         , bad
