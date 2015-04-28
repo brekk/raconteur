@@ -41,8 +41,8 @@
     "lodash": "^3.7.0",
     "parkplace": "^0.1.0",
     "promised-io": "^0.3.5",
-    "raconteur-crier": "^0.0.2",
-    "raconteur-scribe": "^0.0.5",
+    "raconteur-crier": "^0.0.3",
+    "raconteur-scribe": "^0.0.7",
     "slugger": "^1.0.0",
     "wrap-stream": "^2.0.0",
     "coffee-script": "~1.9.2"

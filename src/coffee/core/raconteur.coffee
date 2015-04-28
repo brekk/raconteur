@@ -1,6 +1,6 @@
 "use strict"
 crier = require 'raconteur-crier'
-scribe = require 'raconteur-scribe'
+scribe = require('raconteur-scribe')
 telegraph = require './telegraph'
 telepath = require './telepath'
 

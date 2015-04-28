@@ -9,8 +9,25 @@ chalk = require 'chalk'
 (($)->
     "use strict"
     try
-        locFix = (path)->
-            return cwd + "/test/fixtures" + path
+        locFix = (loc)->
+            return cwd + "/test/fixtures" + loc
+        randomIndex = (array)->
+            if _.isArray array
+                value = Math.floor Math.random() * array.length - 1
+                if (0 <= value) and (value < array.length)
+                    return value
+                return randomIndex array
+        assertRandomUnequal = (array)->
+            if array.length is 1
+                return
+            x = randomIndex array
+            y = randomIndex array
+            if x isnt y
+                array[x].should.not.equal array[y]
+
+        assertNonUnique = (array)->
+            if array.length > 1
+                (0 < _.size _(array).unique().value()).should.be.ok
         describe "Telepath", ()->
             describe ".chain()", ()->
                 describe "a basic chain", ()->
@@ -90,56 +107,93 @@ chalk = require 'chalk'
                                 out.length.should.equal 1
                                 finish()
 
-                    it "should return the cross-product of all requested templates and posts", (done)->
-                        finish = _.after 3, done
-                        $.chain()
-                         .sugar()
-                         .post(locFix "/posts/test.md")
-                         .template("post.sugar", locFix "/templates/tpl-post.sugar")
-                         .template("post-summary.sugar", locFix "/templates/tpl-post-summary.sugar")
-                         .template("post-hero.sugar", locFix "/templates/tpl-post-hero.sugar")
-                         .ready (e, out)->
-                                e?.should.equal false
-                                out.should.be.ok
-                                out.length.should.equal 3
-                                finish()
+                    it "should return the cross-product of templates and posts", (finish)->
+                            $.chain()
+                             .sugar()
+                             .post(locFix "/posts/test.md")
+                             .template("post.sugar", locFix "/templates/tpl-post.sugar")
+                             .template("post-summary.sugar", locFix "/templates/tpl-post-summary.sugar")
+                             .template("post-hero.sugar", locFix "/templates/tpl-post-hero.sugar")
+                             .ready (e, out)->
+                                    e?.should.equal false
+                                    out.should.be.ok
+                                    out.length.should.equal 3
+                                    # they shouldn't be identical
+                                    assertRandomUnequal out
+                                    assertNonUnique out
+                                    finish()
+                    it "should return the cross-product of templates and posts, including groups", (finish)->
+                            $.chain()
+                             .sugar()
+                             .template("post.sugar", locFix "/templates/tpl-post.sugar")
+                             .post(locFix "/posts/test.md")
+                             .post(locFix "/posts/other-test.md")
+                             .post(locFix "/posts/shut-up.md")
+                             .template("post-summary.sugar", locFix "/templates/tpl-post-summary.sugar")
+                             .post(locFix "/posts/test.md")
+                             .post(locFix "/posts/other-test.md")
+                             .post(locFix "/posts/shut-up.md")
+                             .ready (e, out)->
+                                    e?.should.equal false
+                                    out.should.be.ok
+                                    out.length.should.equal 6
+                                    # they shouldn't be identical
+                                    assertRandomUnequal out
+                                    assertNonUnique out
+                                    finish()
 
-                        $.chain()
-                         .sugar()
-                         .template("post.sugar", locFix "/templates/tpl-post.sugar")
-                         .post(locFix "/posts/test.md")
-                         .post(locFix "/posts/other-test.md")
-                         .post(locFix "/posts/shut-up.md")
-                         .template("post-summary.sugar", locFix "/templates/tpl-post-summary.sugar")
-                         .post(locFix "/posts/test.md")
-                         .post(locFix "/posts/other-test.md")
-                         .post(locFix "/posts/shut-up.md")
-                         .ready (e, out)->
-                                e?.should.equal false
+                    it "should return the cross-product of templates and posts, including multiple groups", (finish)->
+                            good = (out)->
                                 out.should.be.ok
-                                out.length.should.equal 6
+                                out.length.should.equal 7
+                                # they shouldn't be identical
+                                assertRandomUnequal out
+                                assertNonUnique out
                                 finish()
+                            bad = (e)->
+                                console.log e, 'error'
+                            $.chain()
+                             .sugar()
+                             .promise()
+                             .template("post.sugar", locFix "/templates/tpl-post.sugar")
+                             .post(locFix "/posts/test.md")
+                             .post(locFix "/posts/other-test.md")
+                             .post(locFix "/posts/shut-up.md")
+                             .template("post-summary.sugar", locFix "/templates/tpl-post-summary.sugar")
+                             .post(locFix "/posts/test.md")
+                             .post(locFix "/posts/other-test.md")
+                             .template("post-hero.sugar", locFix "/templates/tpl-post-hero.sugar")
+                             .post(locFix "/posts/other-test.md")
+                             .post(locFix "/posts/shut-up.md")
+                             .ready().then good, bad
 
-                        good = (out)->
-                            out.should.be.ok
-                            out.length.should.equal 7
-                            finish()
-                        bad = (e)->
-                            console.log e, 'error'
-                        $.chain()
-                         .sugar()
-                         .promise()
-                         .template("post.sugar", locFix "/templates/tpl-post.sugar")
-                         .post(locFix "/posts/test.md")
-                         .post(locFix "/posts/other-test.md")
-                         .post(locFix "/posts/shut-up.md")
-                         .template("post-summary.sugar", locFix "/templates/tpl-post-summary.sugar")
-                         .post(locFix "/posts/test.md")
-                         .post(locFix "/posts/other-test.md")
-                         .template("post-hero.sugar", locFix "/templates/tpl-post-hero.sugar")
-                         .post(locFix "/posts/other-test.md")
-                         .post(locFix "/posts/shut-up.md")
-                         .ready().then good, bad
+                describe ".locals", ()->
+                    it "should allow raw data to be added to its .locals property, which can then be resolved within a post", (finish)->
+                        chain = $.chain()
+                        testName = "RANDOM" + Math.round Math.random() * 3e3
+                        chain.locals.testName = testName
+                        postContent = """
+                        ---\ntitle: some shia\npreview: something\n---some yaml-faced content
+                        """
+                        templateContent = """
+                        article.post
+                            h1|{testName}
+                        """
+                        templateContent2 = """
+                        div|{testName}
+                        """
+                        chain.sugar()
+                             .promise()
+                             .yaml()
+                             .raw()
+                             .post(postContent)
+                             .template("post.sugar", templateContent)
+                             .template("second-post.sugar", templateContent2)
+                             .ready().then (out)->
+                                out.should.be.ok
+                                out[0].should.equal """<article class="post"><h1>#{testName}</h1></article>"""
+                                out.length.should.equal 2
+                                finish()
 
     catch e
         console.log "Error during Spec-telepath testing", e

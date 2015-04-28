@@ -5,7 +5,6 @@ promise = require 'promised-io/promise'
 Deferred = promise.Deferred
 AmpState = require 'ampersand-state'
 AmpCollection = require 'ampersand-collection'
-chalk = require 'chalk'
 slugger = require 'slugger'
 debug = require('debug') 'raconteur:telepathic-chain'
 path = require 'path'
@@ -127,6 +126,17 @@ module.exports = (stateName)->
 
     ___.guarded '__chain__', 'TELEPATH'
 
+    ___.guarded "_locals", crier.locals
+
+    ___.readable 'locals', {
+        get: ()->
+            return @_locals
+        set: (obj)->
+            if !_.isObject obj
+                throw new TypeError "Expected .locals assignment to be an object."
+            @_locals = obj
+    }, true
+
     # state object
     ___.guarded "_mode", {
         raw: false # raw is !file
@@ -246,17 +256,20 @@ module.exports = (stateName)->
         # state.counter += 1
         return state.addInstruction.call state, name, fn, kind
 
-    ___.readable 'lookup', _.memoize (location, id)->
+    ___.readable 'lookup', (location, id)->
         self = @
         out = self[location][id]
         return out
+
+    yamlRegex = /^-{3}/
 
     # add a post to the 
     ___.readable 'post', (post, options)->
         self = TelepathicChain
         debug "adding instruction to add post"
         self.addInstruction "post", ()->
-            debug chalk.green "reading post"
+            debug "reading post"
+
             settings = _.extend self._mode, options
             if settings.yaml
                 debug "...yaml"
@@ -264,14 +277,22 @@ module.exports = (stateName)->
             method = scribe.readFileAsPromise
             if settings.raw? and settings.raw
                 method = scribe.readRawAsPromise
+                if yamlRegex.test post
+                    debug "automatically switching to yaml mode"
+                    scribe.yaml()
             d = new Deferred()
             success = (content)->
                 debug "...success"
-                if !content? or content.length is 0
-                    d.reject new Error "Content is empty, expected content to be a string with length > 0."
+                if !content?
+                    d.reject new Error "Content is empty, expected content to be an object."
                 else
-                    idName = _.uniqueId slugger content.attributes.title, {smartTrim: 32}
-                    self._posts[idName] = content
+                    idName = slugger content.attributes.title, {smartTrim: 32}
+                    if idName is ''
+                        console.log "HOOOOOOOOOOOOOOOOO", content
+                        d.reject new Error "idName is empty."
+                        return
+                    unless self._posts[idName]?
+                        self._posts[idName] = content
                     d.resolve {
                         location: '_posts'
                         id: idName
@@ -291,7 +312,7 @@ module.exports = (stateName)->
         debug "adding instruction to add template"
         originalArguments = _.toArray arguments
         self.addInstruction "template", ()->
-            debug chalk.green "reading template"
+            debug "reading template"
             settings = _.extend self._mode, options
             d = new Deferred()
             method = crier.loadRawAsPromise
@@ -340,48 +361,93 @@ module.exports = (stateName)->
     ___.guarded 'fulfillInstructionsByLookup', (set)->
         self = TelepathicChain
         sequentAll = self.hashPromiseArray _.map set.instructions, (struct)->
-            return _.wrap struct.single, (fn)->
-                subRoute = new Deferred()
-                fn().then (out)->
-                    out.resolved = self.lookup out.location, out.id
-                    subRoute.resolve out
-                , (e)->
-                    subRoute.reject e
+            subRoute = new Deferred()
+            good = (out)->
+                out.resolved = self.lookup out.location, out.id
+                subRoute.resolve out
+            bad = (e)->
+                subRoute.reject e
+            return _.wrap struct.fn, (fn)->
+                fn().then good, bad
                 return subRoute
         return sequentAll
 
-    ___.guarded 'resolvePostsAndTemplates', _.memoize (posts, templates)->
+    ___.guarded 'addLocalsToContent', (content)->
         self = TelepathicChain
-        return _.map posts, (postContent)->
-            groupedTemplatePromises = _.map templates, (tplContent)->
-                d = new Deferred()
-                tplContent.resolved postContent.resolved, (e, out)->
-                    if e?
-                        d.reject e
-                        return
-                    d.resolve out
-                return d
-            return promise.all groupedTemplatePromises
+        localized = content
+        currentContent = content.content
+        stripPostsAndTemplatesFromObj = (obj)->
+            if obj.posts?
+                delete obj.posts
+            if obj.templates?
+                delete obj.templates
+        _.each self.locals, (loc, key)->
+            if (key isnt '$len') and (key isnt '$idx') and (key isnt 'content') and (key isnt 'attributes')
+                # if (key is 'posts') or (key is 'templates')
+                #     localized[key] = _(loc).map((item)->
+                #         if item.content is currentContent
+                #             console.log "nuke"
+                #             return null
+                #         item = stripPostsAndTemplatesFromObj item
+                #         return item
+                #     ).compact().value()
+                # else
+                localized[key] = loc
+        return localized
 
+    ___.guarded 'resolvePostsAndTemplates', (posts, templates, group)->
+        self = TelepathicChain
+        return _(posts).map((postContent, key)->
+            postIds = _.pluck(group._posts, 'id')
+            templateIds = _.pluck(group._templates, 'id')
+            if _.contains postIds, key
+                groupedTemplatePromises = _(templates).map((tplContent, tplKey)->
+                    try
+                        unless _.contains templateIds, tplKey
+                            return null
+                        d = new Deferred()
+                        content = postContent
+                        localized = self.addLocalsToContent content
+                        tplContent localized, (e, out)->
+                            if e?
+                                d.reject e
+                                return
+                            d.resolve out
+                        return d
+                    catch e
+                        d.reject e
+                        if e.stack?
+                            console.log e.stack
+                ).compact().value()
+                return promise.all groupedTemplatePromises
+            return null
+        ).compact().value()
+
+    # group by location fn, used during mapping in .execute 
     ___.guarded 'groupByLocation', (item)->
         self = TelepathicChain
         grouped = _(item).toArray().groupBy('location').value()
-        self.resolvePostsAndTemplates grouped._posts, grouped._templates
+        output = self.resolvePostsAndTemplates self._posts, self._templates, grouped
+        return output
 
     ___.guarded "execute", ()->
         self = TelepathicChain
-        d = postpone()
+        executionDeferred = postpone()
         bad = (e)->
-            d.nay e
+            executionDeferred.nay e
             return
         promise.seq(state.commands).then ()->
-            debug "templates %s", _.size self._templates
-            debug "posts %s", _.size self._posts
+            debug "templates", self._templates
+            debug "posts", _.map (_.pluck self._posts, 'content'), (f)-> return f.substr(0,32)
             noPosts = !(_.size(self._posts) > 0)
             noTemplates = !(_.size(self._templates) > 0)
             if noPosts or noTemplates
                 bad new Error "Expected to be invoked with at least one post and one template."
                 return
+            # if self.locals?
+            #     self.locals.posts = self._posts
+            #     self.locals.templates = self._templates
+            # we use the copy array as a clipboard for reverse iteration
             copy = []
             groupByKind = (collection, iter, idx)->
                 copy.push iter
@@ -405,7 +471,7 @@ module.exports = (stateName)->
                         pushToLastGroup = false
                         previousType = _.last previousGroup.operations
                         # arrows = chalk.red "<=>"
-                        # debug previousType, arrows, type
+                        # console.log previousType, arrows, type
                         if (type isnt previousType)
                             if (previousType is previousGroup.startOp)
                                 pushToLastGroup = true
@@ -422,18 +488,21 @@ module.exports = (stateName)->
                 return collection
 
             reduced = self.instructions.reduce groupByKind, []
-            debug "reducing", reduced
             groupedPromises = _.map reduced, self.fulfillInstructionsByLookup
             promise.all(groupedPromises).then (outcomes)->
-                flattened = _(outcomes).map(self.groupByLocation).flatten().value()
-                promise.all(flattened).then (finalOut)->
-                    d.yay _.flatten finalOut
-                , bad
-                return
+                finalOutcomes = _(outcomes).map(self.groupByLocation).map((mapped)->
+                    return promise.all(mapped)
+                ).value()
+                resolve = (out)->
+                    executionDeferred.resolve _.flatten _.flatten out
+                if finalOutcomes.length is 1
+                    finalOutcomes[0].then resolve, bad
+                else
+                    promise.all(finalOutcomes).then resolve, bad
             , bad
             return
         , bad
-        return d
+        return executionDeferred
 
     ___.readable 'ready', (cb)->
         self = @

@@ -1,6 +1,4 @@
-article.post-summary
-    .drawn(role="drawn-content")
-        img(src="{attributes.image}")
+article.post-hero
     .content
         header
             h1.title(role="title")|{attributes.title}
