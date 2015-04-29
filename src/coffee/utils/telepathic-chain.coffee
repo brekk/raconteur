@@ -9,6 +9,9 @@ slugger = require 'slugger'
 debug = require('debug') 'raconteur:telepathic-chain'
 path = require 'path'
 
+slugify = (x)->
+    slugger x, {smartTrim: 32}
+
 postpone = ()->
     d = new Deferred()
     d.yay = _.once d.resolve
@@ -286,7 +289,10 @@ module.exports = (stateName)->
                 if !content?
                     d.reject new Error "Content is empty, expected content to be an object."
                 else
-                    idName = slugger content.attributes.title, {smartTrim: 32}
+                    unless content.attributes.slug?
+                        idName = slugify content.attributes.title
+                    else
+                        idName = content.attributes.slug
                     if idName is ''
                         console.log "HOOOOOOOOOOOOOOOOO", content
                         d.reject new Error "idName is empty."
@@ -375,7 +381,7 @@ module.exports = (stateName)->
     ___.guarded 'addLocalsToContent', (content)->
         self = TelepathicChain
         localized = content
-        currentContent = content.content
+        currentTitle = content.attributes.title
         stripPostsAndTemplatesFromObj = (obj)->
             if obj.posts?
                 delete obj.posts
@@ -383,16 +389,28 @@ module.exports = (stateName)->
                 delete obj.templates
         _.each self.locals, (loc, key)->
             if (key isnt '$len') and (key isnt '$idx') and (key isnt 'content') and (key isnt 'attributes')
-                # if (key is 'posts') or (key is 'templates')
-                #     localized[key] = _(loc).map((item)->
-                #         if item.content is currentContent
-                #             console.log "nuke"
-                #             return null
-                #         item = stripPostsAndTemplatesFromObj item
-                #         return item
-                #     ).compact().value()
-                # else
-                localized[key] = loc
+                if (key is 'posts') or (key is 'templates')
+                    # onlyAttr = loc[_.first _.keys loc]
+                    if currentTitle? and (key is 'posts')
+                        clone = _.assign {}, loc
+                        # sluggedTitle = slugify(onlyAttr.attributes.title)
+                        # delete clone[sluggedTitle]
+                        localized[key] = _.toArray _(clone).map((item, localKey)->
+                            if item.attributes.title is currentTitle
+                                return null
+                            copy = _.assign {}, item
+                            if copy.posts?
+                                delete copy.posts
+                            if copy.templates?
+                                delete copy.templates
+                            out = {}
+                            out[item.attributes.title] = copy
+                            return out
+                        ).compact().reduce((coll, iter)->
+                            return _.extend coll, iter
+                        , {})
+                else
+                    localized[key] = loc
         return localized
 
     ___.guarded 'resolvePostsAndTemplates', (posts, templates, group)->
@@ -444,9 +462,11 @@ module.exports = (stateName)->
             if noPosts or noTemplates
                 bad new Error "Expected to be invoked with at least one post and one template."
                 return
-            # if self.locals?
-            #     self.locals.posts = self._posts
-            #     self.locals.templates = self._templates
+            if self.locals?
+                self.locals.posts = self._posts
+                self.locals.templates = self._templates
+                debug "Added #{_.size(self._posts)} to .locals.posts", _.keys self._posts
+                debug "Added #{_.size(self._templates)} to .locals.templates", _.keys self._templates
             # we use the copy array as a clipboard for reverse iteration
             copy = []
             groupByKind = (collection, iter, idx)->

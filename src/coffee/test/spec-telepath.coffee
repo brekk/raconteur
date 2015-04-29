@@ -175,24 +175,39 @@ chalk = require 'chalk'
                         postContent = """
                         ---\ntitle: some shia\npreview: something\n---some yaml-faced content
                         """
+                        postContent2 = """
+                        ---\ntitle: hooray\nslug: jibber-japper\n---welcome to the future
+                        """
                         templateContent = """
                         article.post
                             h1|{testName}
                         """
                         templateContent2 = """
-                        div|{testName}
+                        div
+                            h1|{testName}
+                            h2|{attributes.title}
+                            ul|{#posts}
+                                li
+                                    strong|{.attributes.title}
+                                {/posts}
                         """
                         chain.sugar()
                              .promise()
                              .yaml()
                              .raw()
+                             .template("post", templateContent)
                              .post(postContent)
-                             .template("post.sugar", templateContent)
-                             .template("second-post.sugar", templateContent2)
+                             .template("second-post", templateContent2)
+                             .post(postContent)
+                             .post(postContent2)
                              .ready().then (out)->
                                 out.should.be.ok
+                                out.length.should.equal 3
+                                # _.each out, (i, idx)->
+                                #     console.log idx + ": ", i
                                 out[0].should.equal """<article class="post"><h1>#{testName}</h1></article>"""
-                                out.length.should.equal 2
+                                out[1].should.equal """<div><h1>#{testName}</h1><h2>some shia</h2><ul><li><strong>hooray</strong></li></ul></div>"""
+                                out[2].should.equal """<div><h1>#{testName}</h1><h2>hooray</h2><ul><li><strong>some shia</strong></li></ul></div>"""
                                 finish()
 
     catch e
