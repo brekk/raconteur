@@ -17,16 +17,31 @@ postpone = ()->
     d.yay = _.once d.resolve
     d.nay = _.once d.reject
     return d
-
+###*
+* This is a simple AmpersandState wrapper around a simple object
+* @class InstructionState
+###
 InstructionState = AmpState.extend {
     props: {
+        ###*
+        * This is the command that the instruction represents
+        * @property fn
+        ###
         fn: ['function', true]
+        ###*
+        * This is the time that the instruction was requested
+        * @property timestamp
+        ###
         timestamp: {
             type: 'number'
             required: true
             default: ()->
                 return Date.now()
         }
+        ###*
+        * This is the name of the instruction
+        * @property name
+        ###
         name: {
             type: 'string'
             required: true
@@ -35,11 +50,27 @@ InstructionState = AmpState.extend {
         }
     }
     session: {
+        ###*
+        * This is a singleton copy of the `fn` property, assigned
+        * during initialize
+        * @property single
+        ###
         single: ['function', true]
     }
+    ###*
+    * This method takes a function and wraps it around its own function
+    * @method wrap
+    * @param {Function} wrapper
+    * @return {Function} wrapped fn
+    ###
     wrap: (wrapper)->
         if _.isFunction wrapper
             return _.wrap @fn, wrapper
+    ###*
+    * The default constructor for ampersand objects
+    * Auto-generates a name if required, and also generates the single session property
+    * @method initialize
+    ###
     initialize: (attrs, opts)->
         if attrs.name?
             attrs.name = _.uniqueId attrs.name
@@ -49,12 +80,22 @@ InstructionState = AmpState.extend {
         return @
 }
 
+###*
+* It's a collection of instructions. Pretty cool.
+* @class InstructionCollection
+###
 InstructionCollection = AmpCollection.extend {
     model: InstructionState
 }
 
+###*
+* This represents the internal instruction chain for each telepathic chain (defined below)
+* @class ChainState
+###
 ChainState = AmpState.extend {
+    # we use name as an identifer
     idAttribute: 'name'
+    # and we'll make one up if you don't give us one
     props: {
         name: {
             type: 'string'
@@ -63,9 +104,16 @@ ChainState = AmpState.extend {
                 return _.uniqueId "chain"
         }
     }
+    # It's our collection of instructions, named instructions. Pretty cool.
     collections: {
         instructions: InstructionCollection
     }
+    ###*
+    * Add a named instruction to our list of instructions
+    * @method addInstruction
+    * @param {String} name - the name of the instruction
+    * @param {Function} fn - the command to add to the new InstructionState
+    ###
     addInstruction: (name, fn)->
         unless _.isString name
             throw new TypeError "Expected name to be a string."
@@ -77,8 +125,13 @@ ChainState = AmpState.extend {
         }
         newState = new InstructionState settings
         return @instructions.add newState
+
     derived: {
-        # re-wraps the instruction set so it builds out a hashmap of promises
+        ###*
+        * Returns a list of singleton functions
+        * re-wraps the instruction set so we only call the singleton function
+        * @property commands
+        ###
         commands: {
             deps: [
                 'instructions'
@@ -87,22 +140,22 @@ ChainState = AmpState.extend {
             fn: ()->
                 return _.map @instructions.models, (instruction)->
                     if instruction.fn?
-                        # return _.wrap instruction.fn, (fn, container)->
-                        #     outcome = fn()
-                        #     if container? and _.isArray container
-                        #         container.push outcome
-                        #     return outcome
                         return instruction.single
                     return null
         }
     }
+    ###*
+    * Wrap all of the instructions with another function
+    * @method wrap
+    ###
     wrap: (wrapper)->
         unless _.isFunction wrapper
             throw new TypeError "Expected wrapper to be function."
         return _.map @instructions.models, (instruction)->
-            if instruction.fn?
-                return _.wrap instruction.fn, wrapper
+            if instruction.wrap?
+                return instruction.wrap wrapper
             return null
+
     initialize: (attrs, opts)->
         if attrs.name?
             attrs.name = _.uniqueId attrs.name
@@ -112,7 +165,6 @@ ChainState = AmpState.extend {
 
 module.exports = (stateName)->
     "use strict"
-    scopeThis = @
     stateSettings = {}
     if stateName?
         stateSettings.name = _.uniqueId stateName
@@ -160,7 +212,7 @@ module.exports = (stateName)->
     # our template list, which contains templates
     ___.guarded '_templates', {}
 
-# our template list, which contains templates
+    # our template list, which contains templates
     ___.guarded '_posts', {}
 
     # set sugar mode
@@ -175,12 +227,6 @@ module.exports = (stateName)->
     ___.readable 'sugar', ()->
         @_sugar = true
         return @
-
-    # we may need to generate random ids, this does that
-    ___.guarded 'generateId', (content=null)->
-        unless content?
-            content = "tpChain"
-        return _.uniqueId content
 
     # set the mode as promise
     ___.readable "promise", ()->
@@ -259,7 +305,7 @@ module.exports = (stateName)->
         # state.counter += 1
         return state.addInstruction.call state, name, fn, kind
 
-    ___.readable 'lookup', (location, id)->
+    ___.readable 'lookup', _.memoize (location, id)->
         self = @
         out = self[location][id]
         return out
@@ -373,11 +419,13 @@ module.exports = (stateName)->
                 subRoute.resolve out
             bad = (e)->
                 subRoute.reject e
-            return _.wrap struct.fn, (fn)->
+            return _.wrap struct.single, (fn)->
                 fn().then good, bad
                 return subRoute
         return sequentAll
 
+    # used by resolvePostsAndTemplates, this adds the .locals' properties
+    # to the post content before it goes out
     ___.guarded 'addLocalsToContent', (content)->
         self = TelepathicChain
         localized = content
@@ -413,6 +461,8 @@ module.exports = (stateName)->
                     localized[key] = loc
         return localized
 
+    # used internally during execute, this allows us to group together the
+    # correct post to template
     ___.guarded 'resolvePostsAndTemplates', (posts, templates, group)->
         self = TelepathicChain
         return _(posts).map((postContent, key)->
