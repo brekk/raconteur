@@ -5,6 +5,7 @@ cwd = process.cwd()
 telepath = require cwd + '/lib/telepath'
 path = require 'path'
 chalk = require 'chalk'
+checkbox = require 'markdown-it-checkbox'
 
 (($)->
     "use strict"
@@ -146,6 +147,8 @@ chalk = require 'chalk'
                             good = (out)->
                                 out.should.be.ok
                                 out.length.should.equal 7
+                                # _.each out, (i, idx)->
+                                #     console.log idx + ": ", i
                                 # they shouldn't be identical
                                 assertRandomUnequal out
                                 assertNonUnique out
@@ -209,6 +212,32 @@ chalk = require 'chalk'
                                 out[1].should.equal """<div><h1>#{testName}</h1><h2>some shia</h2><ul><li><strong>hooray</strong></li></ul></div>"""
                                 out[2].should.equal """<div><h1>#{testName}</h1><h2>hooray</h2><ul><li><strong>some shia</strong></li></ul></div>"""
                                 finish()
+
+                describe ".use", ()->
+                    it "should allow custom functions as renderer plugins", (done)->
+                        chain = $.chain()
+                        testNumber = Math.round Math.random() * 1e5
+                        postContent = """
+                        ---\ntitle: some shia\npreview: something\n---some yaml-faced content\n[ ] #{testNumber}
+                        """
+                        templateContent = """
+                        article.post
+                            h1|{attributes.title}
+                            .content|{content|s}
+                        """
+                        chain.sugar()
+                             .promise()
+                             .yaml()
+                             .raw()
+                             .use checkbox
+                             .template 'template', templateContent
+                             .post postContent
+                             .ready().then (out)->
+                                out.should.be.ok
+                                out[0].should.equal """
+                                <article class="post"><h1>some shia</h1><div class="content"><p>some yaml-faced content\n<input type="checkbox" id="checkbox0" /><label for="checkbox0">#{testNumber}</label></p>\n</div></article>
+                                """
+                                done()
 
     catch e
         console.log "Error during Spec-telepath testing", e

@@ -209,6 +209,28 @@ module.exports = (stateName)->
             )
     }, true
 
+    ___.guarded 'renderer', {
+        set: (renderer)->
+            if _.isFunction renderer
+                scribe.renderer = renderer
+        get: ()->
+            return scribe.renderer
+    }, true
+
+    ___.readable "setRenderer", (x)->
+        @renderer = x
+
+    ___.readable "use", (listOfFns)->
+        self = @
+        args = _.toArray arguments
+        if _.isArray listOfFns
+            args = listOfFns
+        _.each args, (fn)->
+            if !_.isFunction fn
+                throw new TypeError "Expected one or more functions (or an array of functions) to be a given."
+            scribe.renderer.use fn
+        return @
+
     # our template list, which contains templates
     ___.guarded '_templates', {}
 
